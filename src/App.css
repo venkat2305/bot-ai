@@ -1,38 +1,24 @@
-.App {
-  text-align: center;
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+* {
+  margin: 0;
+  font-family: 'Ubuntu', sans-serif;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+/* .ant-btn {
+  background-color: #d7c7f4 !important;
+  border-color: #d7c7f4 !important;
+  color: #fff !important;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+.ant-btn:hover {
+  background-color: #c6b2e0 !important;
 }
 
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
+.ant-btn:focus {
+  border-color: #b5a1d3 !important;
+} */

@@ -1,23 +1,17 @@
-import logo from './logo.svg';
-import './App.css';
+import SideBar from "./components/SideBar";
+import './App.css'
+import NewPage from "./pages/NewPage";
+import { Route, Routes } from "react-router-dom";
+import PastConversation from "./pages/PastConversation";
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div style={{ display: "flex", width: "100%" }}>
+      <SideBar />
+      <Routes>
+        <Route path="/" element={<NewPage style={{ flexGrow: 1 }} />} />
+        <Route path="/past-coversation" element={<PastConversation />} />
+      </Routes>
     </div>
   );
 }
