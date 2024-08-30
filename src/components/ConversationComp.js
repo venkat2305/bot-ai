@@ -48,7 +48,7 @@ function ConversationComp({ who, quesAns, time, updateRatingFeedback, rating, fe
             </div>
             <Space direction="vertical">
                 <Typography.Text style={{ margin: 0, fontSize: "1.2rem" }} ><strong>{who}</strong></Typography.Text>
-                <Typography.Text copyable style={{ fontFamily: "Open Sans,sans-serif" }}>
+                <Typography.Text copyable={{ text: quesAns }} style={{ fontFamily: "Open Sans,sans-serif" }}>
                     <ReactMarkdown>
                         {quesAns}
                     </ReactMarkdown>
