@@ -1,4 +1,4 @@
-import { Space, Spin, Typography } from "antd"
+import { Flex, Select, Space, Spin, Typography } from "antd"
 import InputBar from "./InputBar"
 import siteIcon from '../assets/site-icon.png'
 import ConversationStarter from "./ConversationStarter"
@@ -101,15 +101,34 @@ const freeModels = [
 
 const OPENROUTER_API_KEY = process.env.REACT_APP_OPENROUTER_API_KEY;
 
-function ConversationContainer({ style }) {
+let conversationStarters = []
+let t = 4
+while (t--) {
+    let randNum = Math.floor(Math.random() * sampleData.length)
+    conversationStarters.push({
+        question: sampleData[randNum].question,
+        subtext: "Get immediate AI generated response"
+    })
+}
+
+function ConversationContainer() {
 
     const [currentSession, setCurrentSession] = useState([])
     const [inputText, setInputText] = useState()
     const [loading, setLoading] = useState(false)
+    const [selectedModel, setSelectedModel] = useState(freeModels[0].model_id)
 
+    useEffect(() => {
+        setCurrentSession([])
+    }, [])
 
     const getAiAnwer = async (input) => {
         let result = ""
+        let fullContext = ""
+        currentSession.forEach(item => {
+            fullContext += `user question or AI response : ${item.who} question or answer ${item.quesAns}`
+        })
+        fullContext += ` my new question is ${input}`
         setLoading(true)
         try {
             const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -121,7 +140,7 @@ function ConversationContainer({ style }) {
                 body: JSON.stringify({
                     "model": freeModels[0].model_id,
                     "messages": [
-                        { "role": "user", "content": input },
+                        { "role": "user", "content": fullContext },
                     ],
                 })
             })
@@ -142,24 +161,8 @@ function ConversationContainer({ style }) {
         return result
     }
 
-    const conversationStarters = [
-        {
-            question: "What's the difference between GET and POST requests",
-            subtext: "Get immediate AI generated response"
-        },
-        {
-            question: "What is a Promise in JavaScript?",
-            subtext: "Get immediate AI generated response"
-        },
-        {
-            question: "Can you describe how CORS works?",
-            subtext: "Get immediate AI generated response"
-        },
-        {
-            question: "What is a JWT and how is it used?",
-            subtext: "Get immediate AI generated response"
-        },
-    ]
+
+
 
     // lets use time as id to identify and modify for adding rating and feedback
 
@@ -176,13 +179,13 @@ function ConversationContainer({ style }) {
         })
     }
 
-    const onAsk = () => {
+    const onAsk = (input) => {
         setCurrentSession(prev => ([...prev, {
             who: "user",
-            quesAns: inputText,
+            quesAns: input,
             time: new Date().toLocaleString()
         }]))
-        const aiAns = getAiAnwer(inputText)
+        getAiAnwer(input)
 
         setInputText("")
     }
@@ -205,42 +208,58 @@ function ConversationContainer({ style }) {
             justifyContent: "space-between",
             padding: "10px",
             height: "100vh",
-            background: "linear-gradient(180deg, rgba(215, 199, 244, 0.2) 0%, rgba(151, 133, 186, 0.2) 100%)",
-            ...style
+            // background: "linear-gradient(180deg, rgba(215, 199, 244, 0.2) 0%, rgba(151, 133, 186, 0.2) 100%)",
+            flexGrow: 1,
+            gap: "50px"
         }}>
-            {currentSession.length ? (
-                <Space direction="vertical"  >
-                    {currentSession.map(item => (
-                        <ConversationComp
-                            key={item.time}
-                            who={item.who}
-                            quesAns={item.quesAns}
-                            time={item.time}
-                            updateRatingFeedback={updateRatingFeedback}
-                            rating={item.rating}
-                            feedback={item.feedback}
-                        />
-                    ))}
-                </Space>
-            ) : (
-
-                <>
+            <Flex style={{ flexGrow: 1 }} vertical justify="space-between">
+                <Space style={{ justifyContent: "space-between" }}>
                     <Typography.Title level={4} style={{ color: "#9785BA" }}>Bot AI</Typography.Title>
-                    <Space direction="vertical" align="center">
-                        <Typography.Title level={3}>How Can I Help You Today?</Typography.Title>
-                        <img src={siteIcon} alt="site icon" />
-                    </Space>
-                    <Space style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "25px" }}>
-                        {conversationStarters.map(item => (
-                            <ConversationStarter
-                                key={item.question}
-                                question={item.question}
-                                subtext={item.subtext}
+                    <Select
+                        defaultValue={selectedModel}
+                        onChange={(value) => setSelectedModel(value)}
+                        style={{ width: 300 }}
+                    >
+                        {freeModels.map(item => (
+                            <Select.Option value={item.model_id} key={item.model_id}>
+                                {item.model_name}
+                            </Select.Option>
+                        ))}
+                    </Select>
+                </Space>
+                {currentSession.length ? (
+                    <Flex vertical justify="flex-start" >
+                        {currentSession.map(item => (
+                            <ConversationComp
+                                key={item.time}
+                                who={item.who}
+                                quesAns={item.quesAns}
+                                time={item.time}
+                                updateRatingFeedback={updateRatingFeedback}
+                                rating={item.rating}
+                                feedback={item.feedback}
                             />
                         ))}
-                    </Space>
-                </>
-            )}
+                    </Flex>
+                ) : (
+                    <>
+                        <Space direction="vertical" align="center">
+                            <Typography.Title level={3}>How Can I Help You Today?</Typography.Title>
+                            <img src={siteIcon} alt="site icon" />
+                        </Space>
+                        <Space style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "25px" }}>
+                            {conversationStarters.map(item => (
+                                <ConversationStarter
+                                    key={item.question}
+                                    question={item.question}
+                                    subtext={item.subtext}
+                                    onAsk={onAsk}
+                                />
+                            ))}
+                        </Space>
+                    </>
+                )}
+            </Flex>
             {loading && <Spin size="large" />}
             <div>
                 <InputBar inputText={inputText} setInputText={setInputText} onAsk={onAsk} onSave={onSave} />

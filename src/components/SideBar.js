@@ -7,16 +7,19 @@ function SideBar() {
     const { Text } = Typography
     const navigate = useNavigate()
     return (
-        <Space direction='vertical'>
-            <Space align='center' style={{ backgroundColor: "#d7c7f4" }}>
-                <img width="30px" src={siteIcon} alt="site icon" />
-                <Text>New Chat</Text>
-                <img src={newEditIcon} />
+        <Space direction='vertical' size="large" align='center' style={{ width: "" }}>
+            <Space align='center' style={{
+                backgroundColor: "#d7c7f4",
+                width: "100%",
+                padding: "5px 15px",
+            }}>
+                <img width="40px" src={siteIcon} alt="site icon" />
+                <Text style={{ fontSize: "1.1rem" }}>New Chat</Text>
+                <img src={newEditIcon} onClick={() => navigate('/')} />
             </Space>
             <Button type="primary" onClick={() => navigate('/past-coversation')}>
                 <strong style={{ color: "#414146" }}>Past Conversations</strong>
             </Button>
-
         </Space >
     )
 }

@@ -21,19 +21,20 @@ function ConversationComp({ who, quesAns, time, updateRatingFeedback, rating, fe
         width: "100%",
         padding: "10px 10px 10px 20px"
     }
-    if (past) {
-
-    } else {
-        style.background = "#D7C7F421"
-        style.boxShadow= "0px 2px 2px 0 rgba(0,0,0,0.2)"
+    if (!past) {
+        style.background = "#eae5f3"
+        style.boxShadow = "0px 2px 2px 0 rgba(0,0,0,0.2)"
         style.borderRadius = "10px"
+        style.marginBlock = "3px"
+
     }
 
     return (
         <Space
             size="large"
             align="start"
-            style={style}>
+            style={style}
+        >
             <Modal
                 open={showModal}
                 title="Provide Additional Feedback"
