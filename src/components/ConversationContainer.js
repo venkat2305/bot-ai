@@ -5,12 +5,13 @@ import ConversationStarter from "./ConversationStarter"
 import sampleData from '../assets/sampleData.json'
 import { useEffect, useState } from "react"
 import ConversationComp from "./ConversationComp"
+import Groq from "groq-sdk";
 
 const freeModels = [
     {
         id: 0,
         model_name: "Nous: Hermes 3 405B Instruct",
-        model_id: "nousresearch/hermes-3-llama-3.1-405b",
+        model_id: "nousresearch/hermes-3-llama-3.1-405b:free",
     },
     {
         id: 1,
@@ -100,6 +101,7 @@ const freeModels = [
 ];
 
 const OPENROUTER_API_KEY = process.env.REACT_APP_OPENROUTER_API_KEY;
+const REACT_APP_GROQ_API_KEY = process.env.REACT_APP_GROQ_API_KEY
 
 let conversationStarters = []
 let t = 4
@@ -114,12 +116,22 @@ while (t--) {
 function ConversationContainer() {
 
     const [currentSession, setCurrentSession] = useState([])
-    const [inputText, setInputText] = useState()
+    const [inputText, setInputText] = useState("")
     const [loading, setLoading] = useState(false)
     const [selectedModel, setSelectedModel] = useState(freeModels[0].model_id)
+    const [groqModels, setGroqModels] = useState([])
+
+    const groq = new Groq({ apiKey: REACT_APP_GROQ_API_KEY, dangerouslyAllowBrowser: true });
+
+    const getModels = async () => {
+        const res = await groq.models.list();
+        console.log(res.data)
+        setGroqModels(res.data)
+    };
 
     useEffect(() => {
         setCurrentSession([])
+        getModels()
     }, [])
 
     const getAiAnwer = async (input) => {
@@ -160,9 +172,6 @@ function ConversationContainer() {
 
         return result
     }
-
-
-
 
     // lets use time as id to identify and modify for adding rating and feedback
 
@@ -215,17 +224,28 @@ function ConversationContainer() {
             <Flex style={{ flexGrow: 1 }} vertical justify="space-between">
                 <Space style={{ justifyContent: "space-between" }}>
                     <Typography.Title level={4} style={{ color: "#9785BA" }}>Bot AI</Typography.Title>
-                    <Select
-                        defaultValue={selectedModel}
-                        onChange={(value) => setSelectedModel(value)}
-                        style={{ width: 300 }}
-                    >
-                        {freeModels.map(item => (
-                            <Select.Option value={item.model_id} key={item.model_id}>
-                                {item.model_name}
-                            </Select.Option>
-                        ))}
-                    </Select>
+                    <Space>
+                        <Select
+                            style={{ width: 300 }}
+                        >
+                            {groqModels.map(model => (
+                                <Select.Option key={model.id}>
+                                    {model.id}
+                                </Select.Option>
+                            ))}
+                        </Select>
+                        <Select
+                            defaultValue={selectedModel}
+                            onChange={(value) => setSelectedModel(value)}
+                            style={{ width: 300 }}
+                        >
+                            {freeModels.map(item => (
+                                <Select.Option value={item.model_id} key={item.model_id}>
+                                    {item.model_name}
+                                </Select.Option>
+                            ))}
+                        </Select>
+                    </Space>
                 </Space>
                 {currentSession.length ? (
                     <Flex vertical justify="flex-start" >
