@@ -118,21 +118,52 @@ function ConversationContainer() {
     const [currentSession, setCurrentSession] = useState([])
     const [inputText, setInputText] = useState("")
     const [loading, setLoading] = useState(false)
-    const [selectedModel, setSelectedModel] = useState(freeModels[0].model_id)
+    const [openRouterModels, setOpenRouterModels] = useState([])
+    const [selectedModel, setSelectedModel] = useState(openRouterModels?.find(model => model?.id === "nousresearch/hermes-3-llama-3.1-405b:free")?.id)
     const [groqModels, setGroqModels] = useState([])
 
     const groq = new Groq({ apiKey: REACT_APP_GROQ_API_KEY, dangerouslyAllowBrowser: true });
 
-    const getModels = async () => {
+    const getGroqModels = async () => {
         const res = await groq.models.list();
-        console.log(res.data)
         setGroqModels(res.data)
     };
 
+    const getOpenRouterModels = async () => {
+        try {
+            const res = await fetch('https://openrouter.ai/api/v1/models', {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            const data = await res.json()
+            const freeModelArr = data.data.filter(model => {
+                return model.pricing.prompt === "0" && model.pricing.completion === "0" ? true : false
+            })
+            console.log(freeModelArr)
+            setOpenRouterModels(freeModelArr)
+        } catch (e) {
+            console.log(e)
+        }
+    }
+
     useEffect(() => {
         setCurrentSession([])
-        getModels()
+        getOpenRouterModels()
+        getGroqModels()
     }, [])
+
+    useEffect(() => {
+        // Set the default model once the openRouterModels are fetched
+        if (openRouterModels.length > 0) {
+            const defaultModel = openRouterModels.find(model => model.id === "nousresearch/hermes-3-llama-3.1-405b:free");
+            if (defaultModel) {
+                setSelectedModel(defaultModel.id);
+            } else {
+                setSelectedModel(openRouterModels[0].id); // Fallback to the first available model
+            }
+        }
+    }, [openRouterModels]);
 
     const getAiAnwer = async (input) => {
         let result = ""
@@ -236,12 +267,13 @@ function ConversationContainer() {
                         </Select>
                         <Select
                             defaultValue={selectedModel}
+                            value={selectedModel}
                             onChange={(value) => setSelectedModel(value)}
                             style={{ width: 300 }}
                         >
-                            {freeModels.map(item => (
-                                <Select.Option value={item.model_id} key={item.model_id}>
-                                    {item.model_name}
+                            {openRouterModels.map(model => (
+                                <Select.Option value={model.id} key={model.id}>
+                                    {model.name}
                                 </Select.Option>
                             ))}
                         </Select>
