@@ -121,6 +121,8 @@ function ConversationContainer() {
     const [openRouterModels, setOpenRouterModels] = useState([])
     const [selectedModel, setSelectedModel] = useState(openRouterModels?.find(model => model?.id === "nousresearch/hermes-3-llama-3.1-405b:free")?.id)
     const [groqModels, setGroqModels] = useState([])
+    const [streamingResponse, setStreamingResponse] = useState("");
+    const [isStreaming, setIsStreaming] = useState(false);
 
     const groq = new Groq({ apiKey: REACT_APP_GROQ_API_KEY, dangerouslyAllowBrowser: true });
 
@@ -166,15 +168,18 @@ function ConversationContainer() {
     }, [openRouterModels]);
 
     const getAiAnwer = async (input) => {
-        let result = ""
         let fullContext = ""
         currentSession.forEach(item => {
             fullContext += `user question or AI response : ${item.who} question or answer ${item.quesAns}`
         })
         fullContext += ` my new question is ${input}`
         setLoading(true)
+        setIsStreaming(true)
+        setStreamingResponse("");
+        let fullResponse = ""; // Store the complete response
+
         try {
-            const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                 method: "POST",
                 headers: {
                     "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
@@ -185,23 +190,57 @@ function ConversationContainer() {
                     "messages": [
                         { "role": "user", "content": fullContext },
                     ],
+                    "stream": true
                 })
-            })
-            const data = await res.json()
-            setLoading(false)
-            setCurrentSession(prev => ([...prev, {
-                who: "Soul AI",
-                quesAns: data.choices[0].message.content,
-                time: new Date().toLocaleString(),
-                rating: 0,
-                feedback: "",
-            }]))
-        } catch (e) {
-            setLoading(false)
-            console.log(e)
-        }
+            });
 
-        return result
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n').filter(line => line.trim() !== '');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const data = line.slice(6);
+                        if (data === '[DONE]') continue;
+                        
+                        try {
+                            const parsed = JSON.parse(data);
+                            const content = parsed.choices[0]?.delta?.content || '';
+                            fullResponse += content; // Accumulate the full response
+                            setStreamingResponse(prev => prev + content);
+                        } catch (e) {
+                            console.error('Error parsing JSON:', e);
+                        }
+                    }
+                }
+            }
+
+            // Wait for next render cycle before updating the conversation
+            setTimeout(() => {
+                setCurrentSession(prev => ([...prev, {
+                    who: "Soul AI",
+                    quesAns: fullResponse, // Use the accumulated response
+                    time: new Date().toLocaleString(),
+                    rating: 0,
+                    feedback: "",
+                }]));
+                setIsStreaming(false);
+                setStreamingResponse("");
+            }, 0);
+
+        } catch (e) {
+            console.log(e)
+            setIsStreaming(false);
+            setStreamingResponse("");
+        } finally {
+            setLoading(false)
+        }
     }
 
     // lets use time as id to identify and modify for adding rating and feedback
@@ -292,6 +331,16 @@ function ConversationContainer() {
                                 feedback={item.feedback}
                             />
                         ))}
+                        {isStreaming && (
+                            <ConversationComp
+                                who="Soul AI"
+                                quesAns={streamingResponse}
+                                time={new Date().toLocaleString()}
+                                updateRatingFeedback={() => {}}
+                                rating={0}
+                                feedback=""
+                            />
+                        )}
                     </Flex>
                 ) : (
                     <>
