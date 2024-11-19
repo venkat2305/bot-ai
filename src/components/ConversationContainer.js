@@ -6,6 +6,7 @@ import sampleData from '../assets/sampleData.json'
 import { useEffect, useState } from "react"
 import ConversationComp from "./ConversationComp"
 import Groq from "groq-sdk";
+import OpenAI from "openai";
 
 const freeModels = [
     {
@@ -123,8 +124,13 @@ function ConversationContainer() {
     const [groqModels, setGroqModels] = useState([])
     const [streamingResponse, setStreamingResponse] = useState("");
     const [isStreaming, setIsStreaming] = useState(false);
+    const [selectedModelType, setSelectedModelType] = useState('openrouter'); // 'openrouter' or 'groq'
 
-    const groq = new Groq({ apiKey: REACT_APP_GROQ_API_KEY, dangerouslyAllowBrowser: true });
+    const groq = new OpenAI({
+        apiKey: REACT_APP_GROQ_API_KEY,
+        baseURL: "https://api.groq.com/openai/v1",
+        dangerouslyAllowBrowser : true
+    });
 
     const getGroqModels = async () => {
         const res = await groq.models.list();
@@ -179,43 +185,58 @@ function ConversationContainer() {
         let fullResponse = ""; // Store the complete response
 
         try {
-            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    "model": freeModels[0].model_id,
-                    "messages": [
-                        { "role": "user", "content": fullContext },
-                    ],
-                    "stream": true
-                })
-            });
+            if (selectedModelType === 'groq') {
+                const stream = await groq.chat.completions.create({
+                    model: selectedModel,
+                    messages: [{ role: "user", content: fullContext }],
+                    stream: true,
+                });
 
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
+                for await (const chunk of stream) {
+                    const content = chunk.choices[0]?.delta?.content || '';
+                    fullResponse += content;
+                    setStreamingResponse(prev => prev + content);
+                }
+            } else {
+                // Existing OpenRouter implementation
+                const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        "model": freeModels[0].model_id,
+                        "messages": [
+                            { "role": "user", "content": fullContext },
+                        ],
+                        "stream": true
+                    })
+                });
 
-            while (true) {
-                const { value, done } = await reader.read();
-                if (done) break;
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
 
-                const chunk = decoder.decode(value);
-                const lines = chunk.split('\n').filter(line => line.trim() !== '');
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
 
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        const data = line.slice(6);
-                        if (data === '[DONE]') continue;
-                        
-                        try {
-                            const parsed = JSON.parse(data);
-                            const content = parsed.choices[0]?.delta?.content || '';
-                            fullResponse += content; // Accumulate the full response
-                            setStreamingResponse(prev => prev + content);
-                        } catch (e) {
-                            console.error('Error parsing JSON:', e);
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n').filter(line => line.trim() !== '');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.slice(6);
+                            if (data === '[DONE]') continue;
+                            
+                            try {
+                                const parsed = JSON.parse(data);
+                                const content = parsed.choices[0]?.delta?.content || '';
+                                fullResponse += content; // Accumulate the full response
+                                setStreamingResponse(prev => prev + content);
+                            } catch (e) {
+                                console.error('Error parsing JSON:', e);
+                            }
                         }
                     }
                 }
@@ -297,24 +318,36 @@ function ConversationContainer() {
                     <Space>
                         <Select
                             style={{ width: 300 }}
+                            value={selectedModelType}
+                            onChange={(value) => {
+                                setSelectedModelType(value);
+                                if (value === 'groq') {
+                                    setSelectedModel(groqModels[0]?.id);
+                                } else {
+                                    setSelectedModel(openRouterModels[0]?.id);
+                                }
+                            }}
                         >
-                            {groqModels.map(model => (
-                                <Select.Option key={model.id}>
-                                    {model.id}
-                                </Select.Option>
-                            ))}
+                            <Select.Option value="groq">Groq Models</Select.Option>
+                            <Select.Option value="openrouter">OpenRouter Models</Select.Option>
                         </Select>
                         <Select
-                            defaultValue={selectedModel}
+                            style={{ width: 300 }}
                             value={selectedModel}
                             onChange={(value) => setSelectedModel(value)}
-                            style={{ width: 300 }}
                         >
-                            {openRouterModels.map(model => (
-                                <Select.Option value={model.id} key={model.id}>
-                                    {model.name}
-                                </Select.Option>
-                            ))}
+                            {selectedModelType === 'groq' 
+                                ? groqModels.map(model => (
+                                    <Select.Option value={model.id} key={model.id}>
+                                        {model.id}
+                                    </Select.Option>
+                                ))
+                                : openRouterModels.map(model => (
+                                    <Select.Option value={model.id} key={model.id}>
+                                        {model.name}
+                                    </Select.Option>
+                                ))
+                            }
                         </Select>
                     </Space>
                 </Space>
