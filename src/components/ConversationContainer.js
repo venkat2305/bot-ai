@@ -120,11 +120,11 @@ function ConversationContainer() {
     const [inputText, setInputText] = useState("")
     const [loading, setLoading] = useState(false)
     const [openRouterModels, setOpenRouterModels] = useState([])
-    const [selectedModel, setSelectedModel] = useState(openRouterModels?.find(model => model?.id === "nousresearch/hermes-3-llama-3.1-405b:free")?.id)
+    const [selectedModel, setSelectedModel] = useState('llama-3.3-70b-versatile');
     const [groqModels, setGroqModels] = useState([])
     const [streamingResponse, setStreamingResponse] = useState("");
     const [isStreaming, setIsStreaming] = useState(false);
-    const [selectedModelType, setSelectedModelType] = useState('openrouter'); // 'openrouter' or 'groq'
+    const [selectedModelType, setSelectedModelType] = useState('groq'); // 'groq' or 'openrouter'
 
     const groq = new OpenAI({
         apiKey: REACT_APP_GROQ_API_KEY,
@@ -162,16 +162,22 @@ function ConversationContainer() {
     }, [])
 
     useEffect(() => {
-        // Set the default model once the openRouterModels are fetched
-        if (openRouterModels.length > 0) {
+        if (selectedModelType === 'groq' && groqModels.length > 0) {
+            const defaultModel = groqModels.find(model => model.id === 'llama-3.3-70b-versatile');
+            if (defaultModel) {
+                setSelectedModel(defaultModel.id);
+            } else {
+                setSelectedModel(groqModels[0].id); // Fallback to the first available model
+            }
+        } else if (selectedModelType === 'openrouter' && openRouterModels.length > 0) {
             const defaultModel = openRouterModels.find(model => model.id === "nousresearch/hermes-3-llama-3.1-405b:free");
             if (defaultModel) {
                 setSelectedModel(defaultModel.id);
             } else {
-                setSelectedModel(openRouterModels[0].id); // Fallback to the first available model
+                setSelectedModel(openRouterModels[0].id);
             }
         }
-    }, [openRouterModels]);
+    }, [selectedModelType, groqModels, openRouterModels]);
 
     const getAiAnwer = async (input) => {
         let fullContext = ""
