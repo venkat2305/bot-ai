@@ -29,4 +29,4 @@ function InputBar({ inputText, setInputText, onAsk, onSave }) {
     )
 }
 
-export default InputBar
+export default InputBar;

@@ -40,4 +40,4 @@ function PastConversation() {
     )
 }
 
-export default PastConversation
+export default PastConversation;

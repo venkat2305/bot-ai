@@ -56,7 +56,7 @@ function ConversationContainer() {
       }}
     >
       <Flex style={{ flexGrow: 1 }} vertical justify="space-between">
-        <Space style={{ justifyContent: "space-between" }}>
+        <Flex justify="space-between" align="center">
           <Typography.Title level={4} style={{ color: "#9785BA" }}>
             Bot AI
           </Typography.Title>
@@ -94,7 +94,7 @@ function ConversationContainer() {
                   ))}
             </Select>
           </Space>
-        </Space>
+        </Flex>
         {currentSession.length ? (
           <Flex vertical justify="flex-start">
             {currentSession.map((item) => (

@@ -9,6 +9,16 @@
   font-family: 'Ubuntu', sans-serif;
 }
 
+body[data-theme='light'] {
+  background: #f5f5f5;
+  color: #000;
+}
+
+body[data-theme='dark'] {
+  background: #1a1a1a;
+  color: #fff;
+}
+
 /* .ant-btn {
   background-color: #d7c7f4 !important;
   border-color: #d7c7f4 !important;

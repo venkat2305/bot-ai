@@ -110,4 +110,5 @@ function ConversationComp({ who, quesAns, time, updateRatingFeedback, rating, fe
     )
 }
 
-export default ConversationComp
+export default ConversationComp;
+

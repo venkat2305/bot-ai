@@ -8,4 +8,4 @@ function ConversationStarter({ question, subtext, onAsk }) {
     )
 }
 
-export default ConversationStarter
+export default ConversationStarter;
