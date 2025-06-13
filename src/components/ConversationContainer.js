@@ -1,5 +1,4 @@
 import React from "react";
-import { Select, Space, Typography, Spin, Flex } from "antd";
 import InputBar from "../components/InputBar";
 import ConversationComp from "../components/ConversationComp";
 import ConversationStarter from "../components/ConversationStarter";
@@ -21,7 +20,6 @@ function ConversationContainer() {
     setSelectedModel,
     onAsk,
     onSave,
-    updateRatingFeedback,
   } = useConversation();
 
   const { openRouterModels } = useOpenRouterModels();
@@ -44,68 +42,53 @@ function ConversationContainer() {
   const [inputText, setInputText] = React.useState("");
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-        padding: "10px",
-        height: "100vh",
-        flexGrow: 1,
-        gap: "50px",
-      }}
-    >
-      <Flex style={{ flexGrow: 1 }} vertical justify="space-between">
-        <Flex justify="space-between" align="center">
-          <Typography.Title level={4} style={{ color: "var(--primary-color)" }}>
-            Bot AI
-          </Typography.Title>
-          <Space>
-            <Select
-              style={{ width: 300 }}
+    <div className="flex flex-col justify-between p-3 h-screen gap-12">
+      <div className="flex flex-col gap-4 flex-1">
+        <div className="flex items-center justify-between">
+          <h1 className="text-lg font-bold text-[var(--primary-color)]">Bot AI</h1>
+          <div className="flex gap-3">
+            <select
+              className="border rounded p-1 text-sm bg-white dark:bg-gray-800 dark:text-white"
               value={selectedModelType}
-              onChange={(value) => setSelectedModelType(value)}
+              onChange={(e) => setSelectedModelType(e.target.value)}
             >
-              <Select.Option value="groq">Groq Models</Select.Option>
-              <Select.Option value="openrouter">OpenRouter Models</Select.Option>
-              <Select.Option value="perplexity">Perplexity</Select.Option>
-            </Select>
-            <Select
-              style={{ width: 300 }}
+              <option value="groq">Groq Models</option>
+              <option value="openrouter">OpenRouter Models</option>
+              <option value="perplexity">Perplexity</option>
+            </select>
+            <select
+              className="border rounded p-1 text-sm bg-white dark:bg-gray-800 dark:text-white"
               value={selectedModel}
-              onChange={(value) => setSelectedModel(value)}
+              onChange={(e) => setSelectedModel(e.target.value)}
             >
               {selectedModelType === "groq"
                 ? groqModels.map((model) => (
-                    <Select.Option value={model.id} key={model.id}>
+                    <option value={model.id} key={model.id}>
                       {model.id}
-                    </Select.Option>
+                    </option>
                   ))
                 : selectedModelType === "openrouter"
                 ? openRouterModels.map((model) => (
-                    <Select.Option value={model.id} key={model.id}>
+                    <option value={model.id} key={model.id}>
                       {model.name}
-                    </Select.Option>
+                    </option>
                   ))
                 : perplexityModels.map((model) => (
-                    <Select.Option value={model} key={model}>
+                    <option value={model} key={model}>
                       {model}
-                    </Select.Option>
+                    </option>
                   ))}
-            </Select>
-          </Space>
-        </Flex>
+            </select>
+          </div>
+        </div>
         {currentSession.length ? (
-          <Flex vertical justify="flex-start">
+          <div className="flex flex-col gap-2 flex-1 overflow-y-auto">
             {currentSession.map((item) => (
               <ConversationComp
                 key={item.time}
                 who={item.who}
                 quesAns={item.quesAns}
                 time={item.time}
-                updateRatingFeedback={updateRatingFeedback}
-                rating={item.rating}
-                feedback={item.feedback}
               />
             ))}
             {isStreaming && (
@@ -113,41 +96,30 @@ function ConversationContainer() {
                 who="Soul AI"
                 quesAns={streamingResponse}
                 time={new Date().toLocaleString()}
-                updateRatingFeedback={() => {}}
-                rating={0}
-                feedback=""
               />
             )}
-          </Flex>
+          </div>
         ) : (
-          <>
-            <Space direction="vertical" align="center">
-              <Typography.Title level={3}>
-                How Can I Help You Today?
-              </Typography.Title>
-              <img src={siteIcon} alt="site icon" />
-            </Space>
-            <Space
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "25px",
-              }}
-            >
-              {conversationStarters.map((item) => (
-                <ConversationStarter
-                  key={item.question}
-                  question={item.question}
-                  subtext={item.subtext}
-                  onAsk={onAsk}
-                />
-              ))}
-            </Space>
-          </>
+          <div className="flex flex-col items-center justify-center flex-1 gap-2">
+            <h2 className="text-xl font-semibold">How Can I Help You Today?</h2>
+            <img src={siteIcon} alt="site icon" />
+          </div>
         )}
-      </Flex>
-      {loading && <Spin size="large" />}
-      <div>
+      </div>
+      {loading && <div className="text-center">Loading...</div>}
+      <div className="space-y-4">
+        {currentSession.length === 0 && (
+          <div className="grid grid-cols-2 gap-6">
+            {conversationStarters.map((item) => (
+              <ConversationStarter
+                key={item.question}
+                question={item.question}
+                subtext={item.subtext}
+                onAsk={onAsk}
+              />
+            ))}
+          </div>
+        )}
         <InputBar
           inputText={inputText}
           setInputText={setInputText}

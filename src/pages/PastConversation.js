@@ -1,43 +1,34 @@
-import { Space, Typography } from "antd"
-import { useEffect, useState } from "react"
-import ConversationComp from "../components/ConversationComp"
+import { useEffect, useState } from "react";
+import ConversationComp from "../components/ConversationComp";
 
 function PastConversation() {
-    const [localData, setLocalData] = useState([])
+  const [localData, setLocalData] = useState([]);
 
-    useEffect(() => {
-        const data = JSON.parse(localStorage.getItem("chatBotData")) || []
-        setLocalData(data)
-    }, [])
+  useEffect(() => {
+    const data = JSON.parse(localStorage.getItem("chatBotData")) || [];
+    setLocalData(data);
+  }, []);
 
-    return (
-        <Space
-            direction="vertical"
-            align="center"
-            style={{
-                background: "var(--bg-body)",
-                flexGrow: 1,
-                padding: "20px"
-            }}>
-            <Typography.Title level={4}>Conversation History</Typography.Title>
-            {localData.map(chat => (
-                <Space direction="vertical" size={0} style={{
-                    borderRadius: "10px",
-                    background: "var(--card-bg)"
-                }}>
-                    {chat.map(item =>
-                        <ConversationComp
-                            who={item.who}
-                            time={item.time}
-                            quesAns={item.quesAns}
-                            rating={item.rating}
-                            feedback={item.feedback}
-                        />)}
-                </Space>
-            ))}
-
-        </Space>
-    )
+  return (
+    <div className="flex flex-col items-center bg-[var(--bg-body)] flex-1 p-5 gap-3">
+      <h2 className="text-lg font-semibold">Conversation History</h2>
+      {localData.map((chat, idx) => (
+        <div
+          key={idx}
+          className="flex flex-col gap-1 bg-[var(--card-bg)] rounded p-3 w-full max-w-3xl"
+        >
+          {chat.map((item, i) => (
+            <ConversationComp
+              key={i}
+              who={item.who}
+              time={item.time}
+              quesAns={item.quesAns}
+            />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default PastConversation;
