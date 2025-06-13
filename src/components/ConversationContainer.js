@@ -50,19 +50,19 @@ function ConversationContainer() {
         flexDirection: "column",
         justifyContent: "space-between",
         padding: "10px",
-        height: "100vh",
+        minHeight: "100vh",
         flexGrow: 1,
         gap: "50px",
       }}
     >
       <Flex style={{ flexGrow: 1 }} vertical justify="space-between">
-        <Flex justify="space-between" align="center">
+      <Flex className="conversation-header" justify="space-between" align="center">
           <Typography.Title level={4} style={{ color: "var(--primary-color)" }}>
             Bot AI
           </Typography.Title>
-          <Space>
+          <Space className="model-selects">
             <Select
-              style={{ width: 300 }}
+              style={{ minWidth: 150, flex: 1 }}
               value={selectedModelType}
               onChange={(value) => setSelectedModelType(value)}
             >
@@ -71,7 +71,7 @@ function ConversationContainer() {
               <Select.Option value="perplexity">Perplexity</Select.Option>
             </Select>
             <Select
-              style={{ width: 300 }}
+              style={{ minWidth: 150, flex: 1 }}
               value={selectedModel}
               onChange={(value) => setSelectedModel(value)}
             >

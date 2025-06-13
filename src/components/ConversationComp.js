@@ -66,7 +66,7 @@ function ConversationComp({ who, quesAns, time, updateRatingFeedback, rating, fe
             >
                 <TextArea autoSize onChange={(e) => updateRatingFeedback(time, rating, e.target.value)} />
             </Modal>
-            <div style={{ width: "80px" }}>
+            <div className="icon-wrapper" style={{ width: "80px" }}>
                 <img src={who === "user" ? userIcon : siteIcon} alt="user-icon" />
             </div>
             <Space direction="vertical">

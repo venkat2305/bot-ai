@@ -9,6 +9,11 @@
   font-family: 'Ubuntu', sans-serif;
 }
 
+img {
+  max-width: 100%;
+  height: auto;
+}
+
 body[data-theme='light'] {
   --bg-body: #f5f5f5;
   --text-color: #000;
@@ -30,6 +35,23 @@ body {
   color: var(--text-color);
 }
 
+.conversation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.model-selects {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.icon-wrapper img {
+  width: 100%;
+}
+
 .conversation-starters {
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
 }
@@ -42,6 +64,21 @@ body {
   .input-bar {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .conversation-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .model-selects > * {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .icon-wrapper {
+    width: 40px;
   }
 }
 
