@@ -10,7 +10,9 @@ const REACT_APP_PERPLEXITY_API_KEY = process.env.REACT_APP_PERPLEXITY_API_KEY;
 export default function useConversation() {
   const [currentSession, setCurrentSession] = useState([]);
   const [selectedModelType, setSelectedModelType] = useState("groq");
-  const [selectedModel, setSelectedModel] = useState("r1-1776");
+  const [selectedModel, setSelectedModel] = useState(
+    "meta-llama/llama-4-maverick-17b-128e-instruct"
+  );
   const [loading, setLoading] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingResponse, setStreamingResponse] = useState("");
@@ -23,7 +25,7 @@ export default function useConversation() {
   useEffect(() => {
     // Optionally set default models when user changes model types
     if (selectedModelType === "groq") {
-      setSelectedModel("deepseek-r1-distill-qwen-32b");
+      setSelectedModel("meta-llama/llama-4-maverick-17b-128e-instruct");
     } else if (selectedModelType === "openrouter") {
       setSelectedModel("deepseek/deepseek-r1:free");
     } else {
