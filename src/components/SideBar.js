@@ -19,7 +19,7 @@ function SideBar({ onNewChat, onToggleTheme, themeMode }) {
                 New Chat
             </Button>
             <Button type="primary" onClick={() => navigate('/past-coversation')}>
-                <strong style={{ color: "#414146" }}>Past Conversations</strong>
+                <strong>Past Conversations</strong>
             </Button>
             <Switch
                 checked={themeMode === 'dark'}

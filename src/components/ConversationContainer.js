@@ -57,7 +57,7 @@ function ConversationContainer() {
     >
       <Flex style={{ flexGrow: 1 }} vertical justify="space-between">
         <Flex justify="space-between" align="center">
-          <Typography.Title level={4} style={{ color: "#9785BA" }}>
+          <Typography.Title level={4} style={{ color: "var(--primary-color)" }}>
             Bot AI
           </Typography.Title>
           <Space>

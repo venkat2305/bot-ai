@@ -10,6 +10,21 @@ function App() {
   const [newChatKey, setNewChatKey] = useState(Date.now());
   const [themeMode, setThemeMode] = useState("light");
 
+  const tokens = {
+    light: {
+      colorPrimary: "#722ed1",
+      colorText: "#000",
+      colorBgBase: "#f5f5f5",
+      fontFamily: "Ubuntu",
+    },
+    dark: {
+      colorPrimary: "#9254de",
+      colorText: "#f5f5f5",
+      colorBgBase: "#141414",
+      fontFamily: "Ubuntu",
+    },
+  };
+
   const toggleTheme = () => {
     setThemeMode((prev) => (prev === "light" ? "dark" : "light"));
   };
@@ -29,10 +44,7 @@ function App() {
           themeMode === "dark"
             ? antdTheme.darkAlgorithm
             : antdTheme.defaultAlgorithm,
-        token: {
-          colorPrimary: "#8a2be2",
-          fontFamily: "Ubuntu",
-        },
+        token: tokens[themeMode],
       }}
     >
       <Row style={{ display: "flex", width: "100%" }}>
