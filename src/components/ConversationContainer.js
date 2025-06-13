@@ -48,7 +48,7 @@ function ConversationContainer() {
           <h1 className="text-lg font-bold text-[var(--primary-color)]">Bot AI</h1>
           <div className="flex gap-3">
             <select
-              className="border rounded p-1 text-sm"
+              className="border rounded p-1 text-sm bg-white dark:bg-gray-800 dark:text-white"
               value={selectedModelType}
               onChange={(e) => setSelectedModelType(e.target.value)}
             >
@@ -57,7 +57,7 @@ function ConversationContainer() {
               <option value="perplexity">Perplexity</option>
             </select>
             <select
-              className="border rounded p-1 text-sm"
+              className="border rounded p-1 text-sm bg-white dark:bg-gray-800 dark:text-white"
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
             >
@@ -100,26 +100,26 @@ function ConversationContainer() {
             )}
           </div>
         ) : (
-          <>
-            <div className="flex flex-col items-center gap-2">
-              <h2 className="text-xl font-semibold">How Can I Help You Today?</h2>
-              <img src={siteIcon} alt="site icon" />
-            </div>
-            <div className="grid grid-cols-2 gap-6">
-              {conversationStarters.map((item) => (
-                <ConversationStarter
-                  key={item.question}
-                  question={item.question}
-                  subtext={item.subtext}
-                  onAsk={onAsk}
-                />
-              ))}
-            </div>
-          </>
+          <div className="flex flex-col items-center justify-center flex-1 gap-2">
+            <h2 className="text-xl font-semibold">How Can I Help You Today?</h2>
+            <img src={siteIcon} alt="site icon" />
+          </div>
         )}
       </div>
       {loading && <div className="text-center">Loading...</div>}
-      <div>
+      <div className="space-y-4">
+        {currentSession.length === 0 && (
+          <div className="grid grid-cols-2 gap-6">
+            {conversationStarters.map((item) => (
+              <ConversationStarter
+                key={item.question}
+                question={item.question}
+                subtext={item.subtext}
+                onAsk={onAsk}
+              />
+            ))}
+          </div>
+        )}
         <InputBar
           inputText={inputText}
           setInputText={setInputText}

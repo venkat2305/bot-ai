@@ -1,8 +1,8 @@
 function InputBar({ inputText, setInputText, onAsk, onSave }) {
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800 p-2 rounded">
       <textarea
-        className="flex-grow resize-none p-2 border rounded text-sm bg-transparent"
+        className="flex-grow resize-none p-2 border rounded text-sm bg-white dark:bg-gray-700"
         rows={1}
         value={inputText}
         onChange={(e) => setInputText(e.target.value)}
