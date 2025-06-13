@@ -16,3 +16,18 @@ export const setItem = (key, value) => {
     console.error('Error writing to localStorage', error);
   }
 };
+
+// Key for storing chat history
+const CHAT_HISTORY_KEY = 'chatHistory';
+
+// Function to get chat data from localStorage
+export const getChatData = () => {
+  // Uses the generic getItem function
+  return getItem(CHAT_HISTORY_KEY) || []; // Return empty array if undefined
+};
+
+// Function to set chat data in localStorage
+export const setChatData = (data) => {
+  // Uses the generic setItem function
+  setItem(CHAT_HISTORY_KEY, data);
+};

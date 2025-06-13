@@ -1,32 +1,47 @@
-import { Space, Typography } from "antd"
+import { Space, Typography, theme } from "antd"
 import { useEffect, useState } from "react"
 import ConversationComp from "../components/ConversationComp"
+import { getChatData } from "../../utils/localStorageUtils";
 
 function PastConversation() {
     const [localData, setLocalData] = useState([])
+    const { token } = theme.useToken();
 
     useEffect(() => {
-        const data = JSON.parse(localStorage.getItem("chatBotData")) || []
+        const data = getChatData();
         setLocalData(data)
     }, [])
 
     return (
         <Space
             direction="vertical"
-            align="center"
+            align="center" // Keep items centered within the Space
             style={{
-                background: "linear-gradient(180deg, rgba(215, 199, 244, 0.2) 0%, rgba(151, 133, 186, 0.2) 100%)",
+                backgroundColor: token.colorBgLayout,
                 flexGrow: 1,
-                padding: "20px"
+                padding: token.paddingLG, // Use theme token for padding
+                width: '100%', // Ensure Space takes full width
+                minHeight: 'calc(100vh - 48px)', // Assuming header/other fixed elements height or ensure parent is full height
             }}>
-            <Typography.Title level={4}>Conversation History</Typography.Title>
-            {localData.map(chat => (
-                <Space direction="vertical" size={0} style={{
-                    borderRadius: "10px",
-                    background: "linear-gradient(90deg, #BFACE2 0%, #D7C7F4 100%)"
-                }}>
-                    {chat.map(item =>
+            <Typography.Title level={4} style={{ color: token.colorTextHeading, marginBottom: token.marginLG }}>Conversation History</Typography.Title>
+            {localData.map((chat, index) => ( // Added index for key
+                <Space
+                    key={index} // Added key for list items
+                    direction="vertical"
+                    size={0} // No internal spacing, ConversationComp handles its own margins
+                    style={{
+                        backgroundColor: token.colorBgContainer,
+                        borderRadius: token.borderRadiusLG,
+                        border: `1px solid ${token.colorBorder}`,
+                        padding: token.paddingMD, // Padding inside each chat log
+                        marginBottom: token.marginLG, // Spacing between chat logs
+                        width: '100%', // Ensure each chat log takes full available width
+                        maxWidth: '800px', // Optional: constrain max width for readability
+                    }}
+                >
+                    {chat.map((item, itemIndex) => // Added itemIndex for key
                         <ConversationComp
+                            key={item.time + '-' + itemIndex} // More robust key
                             who={item.who}
                             time={item.time}
                             quesAns={item.quesAns}
