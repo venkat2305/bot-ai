@@ -1,4 +1,4 @@
-import { Modal, Rate, Space, Typography } from "antd"
+import { Modal, Rate, Space, Typography, Collapse, Spin } from "antd"
 import userIcon from '../assets/user-icon.png'
 import siteIcon from '../assets/site-icon.png'
 import { DislikeOutlined, LikeOutlined } from "@ant-design/icons"
@@ -6,6 +6,27 @@ import { useState } from "react"
 import TextArea from "antd/es/input/TextArea"
 import { useLocation } from "react-router"
 import ReactMarkdown from 'react-markdown';
+
+function parseThink(text) {
+    const start = text.indexOf('<think>');
+    const end = text.indexOf('</think>');
+    let reasoning = '';
+    let answer = text;
+    let inProgress = false;
+
+    if (start !== -1) {
+        if (end !== -1 && end > start) {
+            reasoning = text.slice(start + 7, end);
+            answer = (text.slice(0, start) + text.slice(end + 8)).trim();
+        } else {
+            reasoning = text.slice(start + 7);
+            answer = text.slice(0, start).trim();
+            inProgress = true;
+        }
+    }
+
+    return { reasoning, answer, inProgress };
+}
 
 function ConversationComp({ who, quesAns, time, updateRatingFeedback, rating, feedback }) {
     const [showRating, setShowRating] = useState(false)
@@ -16,6 +37,8 @@ function ConversationComp({ who, quesAns, time, updateRatingFeedback, rating, fe
     }
     const location = useLocation()
     const past = location.pathname === "/past-coversation" ? true : false
+
+    const { reasoning, answer, inProgress } = parseThink(quesAns)
 
     const style = {
         width: "100%",
@@ -48,11 +71,25 @@ function ConversationComp({ who, quesAns, time, updateRatingFeedback, rating, fe
             </div>
             <Space direction="vertical">
                 <Typography.Text style={{ margin: 0, fontSize: "1.2rem" }} ><strong>{who}</strong></Typography.Text>
-                <Typography.Text copyable={{ text: quesAns }} style={{ fontFamily: "Open Sans,sans-serif" }}>
-                    <ReactMarkdown>
-                        {quesAns}
-                    </ReactMarkdown>
-                </Typography.Text>
+                {reasoning && (
+                    <Collapse defaultActiveKey={[]} style={{ width: "100%" }}>
+                        <Collapse.Panel
+                            header={<Space>Thinking {inProgress && <Spin size="small" />}</Space>}
+                            key="think"
+                        >
+                            <Typography.Text style={{ fontFamily: "Open Sans,sans-serif" }}>
+                                <ReactMarkdown>{reasoning}</ReactMarkdown>
+                            </Typography.Text>
+                        </Collapse.Panel>
+                    </Collapse>
+                )}
+                {answer && (
+                    <Typography.Text copyable={{ text: answer }} style={{ fontFamily: "Open Sans,sans-serif" }}>
+                        <ReactMarkdown>
+                            {answer}
+                        </ReactMarkdown>
+                    </Typography.Text>
+                )}
                 <Space size="large" >
                     <Typography.Text style={{ fontFamily: "Open Sans,sans-serif" }}>{time.split(',')[1]}</Typography.Text>
                     {who != "user" && !past && (
