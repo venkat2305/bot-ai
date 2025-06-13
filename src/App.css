@@ -30,6 +30,21 @@ body {
   color: var(--text-color);
 }
 
+.conversation-starters {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.input-bar {
+  width: 100%;
+}
+
+@media (max-width: 600px) {
+  .input-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
 /* .ant-btn {
   background-color: #d7c7f4 !important;
   border-color: #d7c7f4 !important;

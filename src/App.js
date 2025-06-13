@@ -47,15 +47,15 @@ function App() {
         token: tokens[themeMode],
       }}
     >
-      <Row style={{ display: "flex", width: "100%" }}>
-        <Col span={3}>
+      <Row style={{ display: "flex", width: "100%", minHeight: "100vh" }}>
+        <Col xs={24} md={6} lg={4}>
           <SideBar
             onNewChat={handleNewChat}
             onToggleTheme={toggleTheme}
             themeMode={themeMode}
           />
         </Col>
-        <Col span={21}>
+        <Col xs={24} md={18} lg={20}>
           <Routes>
             <Route
               path="/"

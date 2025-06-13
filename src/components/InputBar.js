@@ -3,7 +3,7 @@ import { Button, Input } from "antd"
 function InputBar({ inputText, setInputText, onAsk, onSave }) {
 
     return (
-        <div style={{ display: "flex", justifyContent: "space-between", gap: "10px", alignItems: "center" }}>
+        <div className="input-bar" style={{ display: "flex", justifyContent: "space-between", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
             <Input.TextArea
                 autoSize={{ minRows: 1, maxRows: 6 }}
                 onPressEnter={(e) => {
