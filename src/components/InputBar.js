@@ -18,15 +18,23 @@ function InputBar({ inputText, setInputText, onAsk, onSave }) {
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
             />
-            <Button onClick={() => {
-                if (inputText !== "") {
-                    onAsk(inputText)
-                    setInputText("")
-                }
-            }} type="primary" style={{ marginRight: "10px", color: "black" }}>Ask</Button>
-            <Button onClick={onSave} style={{ color: "black" }} type="primary">Save</Button>
+            <Button
+                onClick={() => {
+                    if (inputText !== "") {
+                        onAsk(inputText)
+                        setInputText("")
+                    }
+                }}
+                type="primary"
+                style={{ marginRight: "10px" }}
+            >
+                Ask
+            </Button>
+            <Button onClick={onSave} type="primary">
+                Save
+            </Button>
         </div>
     )
 }
 
-export default InputBar
+export default InputBar;

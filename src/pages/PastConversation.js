@@ -15,7 +15,7 @@ function PastConversation() {
             direction="vertical"
             align="center"
             style={{
-                background: "linear-gradient(180deg, rgba(215, 199, 244, 0.2) 0%, rgba(151, 133, 186, 0.2) 100%)",
+                background: "var(--bg-body)",
                 flexGrow: 1,
                 padding: "20px"
             }}>
@@ -23,7 +23,7 @@ function PastConversation() {
             {localData.map(chat => (
                 <Space direction="vertical" size={0} style={{
                     borderRadius: "10px",
-                    background: "linear-gradient(90deg, #BFACE2 0%, #D7C7F4 100%)"
+                    background: "var(--card-bg)"
                 }}>
                     {chat.map(item =>
                         <ConversationComp
@@ -40,4 +40,4 @@ function PastConversation() {
     )
 }
 
-export default PastConversation
+export default PastConversation;

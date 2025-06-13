@@ -6,4 +6,4 @@ function NewPage({style}){
     )
 }
 
-export default NewPage
+export default NewPage;

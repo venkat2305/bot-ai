@@ -45,7 +45,7 @@ function ConversationComp({ who, quesAns, time, updateRatingFeedback, rating, fe
         padding: "10px 10px 10px 20px"
     }
     if (!past) {
-        style.background = "#eae5f3"
+        style.background = "var(--bubble-bg)"
         style.boxShadow = "0px 2px 2px 0 rgba(0,0,0,0.2)"
         style.borderRadius = "10px"
         style.marginBlock = "3px"
@@ -110,4 +110,5 @@ function ConversationComp({ who, quesAns, time, updateRatingFeedback, rating, fe
     )
 }
 
-export default ConversationComp
+export default ConversationComp;
+
