@@ -1,5 +1,5 @@
 import { Button, Space, Switch } from 'antd';
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 import { FileAddOutlined, BulbOutlined } from "@ant-design/icons";
 import { useTheme } from '../contexts/ThemeContext';
 
