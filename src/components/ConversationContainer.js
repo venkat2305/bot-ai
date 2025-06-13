@@ -212,7 +212,7 @@ function ConversationContainer() {
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        "model": freeModels[0].model_id,
+                        "model": selectedModel,
                         "messages": [
                             { "role": "user", "content": fullContext },
                         ],
