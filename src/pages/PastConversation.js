@@ -1,7 +1,7 @@
 import { Space, Typography, theme } from "antd"
 import { useEffect, useState } from "react"
 import ConversationComp from "../components/ConversationComp"
-import { getChatData } from "../../utils/localStorageUtils";
+import { getChatData } from "../utils/localStorageUtils";
 
 function PastConversation() {
     const [localData, setLocalData] = useState([])
