@@ -55,16 +55,22 @@ export default function useConversation() {
 
     try {
       if (selectedModelType === "perplexity") {
-        const perplexityAPI = new OpenAI({
-          apiKey: REACT_APP_PERPLEXITY_API_KEY,
-          baseURL: "https://api.perplexity.ai",
-          dangerouslyAllowBrowser: true,
-        });
-        const completion = await perplexityAPI.chat.completions.create({
-          model: selectedModel,
-          messages: [{ role: "user", content: fullContext }],
-        });
-        fullResponse = completion.choices[0].message.content;
+        const response = await fetch(
+          "https://api.perplexity.ai/chat/completions",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${REACT_APP_PERPLEXITY_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: selectedModel,
+              messages: [{ role: "user", content: fullContext }],
+            }),
+          }
+        );
+        const data = await response.json();
+        fullResponse = data.choices[0].message.content;
         setCurrentSession((prev) => [
           ...prev,
           {
