@@ -9,6 +9,16 @@
   font-family: 'Ubuntu', sans-serif;
 }
 
+body.light {
+  background-color: #f5f7fa;
+  color: #1f1f1f;
+}
+
+body.dark {
+  background-color: #1e1e2f;
+  color: #f1f1f1;
+}
+
 /* .ant-btn {
   background-color: #d7c7f4 !important;
   border-color: #d7c7f4 !important;
