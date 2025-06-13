@@ -1,17 +1,18 @@
-export function setChatData(sessionData) {
-  const existing = localStorage.getItem("chatBotData");
-  let parsed = [];
-  if (existing) {
-    parsed = JSON.parse(existing);
+// src/utils/localStorageUtils.js
+export const getItem = (key) => {
+  try {
+    const item = window.localStorage.getItem(key);
+    return item ? JSON.parse(item) : undefined;
+  } catch (error) {
+    console.error('Error reading from localStorage', error);
+    return undefined;
   }
-  parsed.push(sessionData);
-  localStorage.setItem("chatBotData", JSON.stringify(parsed));
-}
+};
 
-export function getChatData() {
-  const existing = localStorage.getItem("chatBotData");
-  if (existing) {
-    return JSON.parse(existing);
+export const setItem = (key, value) => {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.error('Error writing to localStorage', error);
   }
-  return [];
-}
+};

@@ -1,5 +1,5 @@
 import React from "react";
-import { Select, Space, Typography, Spin, Flex } from "antd";
+import { Select, Space, Typography, Spin, Flex, theme } from "antd";
 import InputBar from "../components/InputBar";
 import ConversationComp from "../components/ConversationComp";
 import ConversationStarter from "../components/ConversationStarter";
@@ -27,6 +27,7 @@ function ConversationContainer() {
   const { openRouterModels } = useOpenRouterModels();
   const { groqModels } = useGroqModels();
   const perplexityModels = ["r1-1776"];
+  const { token } = theme.useToken();
 
   const conversationStarters = React.useMemo(() => {
     const starters = [];
@@ -57,7 +58,7 @@ function ConversationContainer() {
     >
       <Flex style={{ flexGrow: 1 }} vertical justify="space-between">
         <Space style={{ justifyContent: "space-between" }}>
-          <Typography.Title level={4} style={{ color: "#9785BA" }}>
+          <Typography.Title level={4} style={{ color: token.colorPrimary }}>
             Bot AI
           </Typography.Title>
           <Space>
