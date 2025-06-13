@@ -1,114 +1,93 @@
-import { Modal, Rate, Space, Typography, Collapse, Spin } from "antd"
-import userIcon from '../assets/user-icon.png'
-import siteIcon from '../assets/site-icon.png'
-import { DislikeOutlined, LikeOutlined } from "@ant-design/icons"
-import { useState } from "react"
-import TextArea from "antd/es/input/TextArea"
-import { useLocation } from "react-router"
-import ReactMarkdown from 'react-markdown';
+import { useState } from "react";
+import { PlusCircledIcon, MinusCircledIcon } from "@radix-ui/react-icons";
+import userIcon from "../assets/user-icon.png";
+import siteIcon from "../assets/site-icon.png";
+import { useLocation } from "react-router";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 function parseThink(text) {
-    const start = text.indexOf('<think>');
-    const end = text.indexOf('</think>');
-    let reasoning = '';
-    let answer = text;
-    let inProgress = false;
+  const start = text.indexOf("<think>");
+  const end = text.indexOf("</think>");
+  let reasoning = "";
+  let answer = text;
+  let inProgress = false;
 
-    if (start !== -1) {
-        if (end !== -1 && end > start) {
-            reasoning = text.slice(start + 7, end);
-            answer = (text.slice(0, start) + text.slice(end + 8)).trim();
-        } else {
-            reasoning = text.slice(start + 7);
-            answer = text.slice(0, start).trim();
-            inProgress = true;
-        }
+  if (start !== -1) {
+    if (end !== -1 && end > start) {
+      reasoning = text.slice(start + 7, end);
+      answer = (text.slice(0, start) + text.slice(end + 8)).trim();
+    } else {
+      reasoning = text.slice(start + 7);
+      answer = text.slice(0, start).trim();
+      inProgress = true;
     }
+  }
 
-    return { reasoning, answer, inProgress };
+  return { reasoning, answer, inProgress };
 }
 
-function ConversationComp({ who, quesAns, time, updateRatingFeedback, rating, feedback }) {
-    const [showRating, setShowRating] = useState(false)
-    const [showModal, setShowModal] = useState(false)
+function ConversationComp({ who, quesAns, time }) {
+  const location = useLocation();
+  const past = location.pathname === "/past-coversation";
+  const { reasoning, answer } = parseThink(quesAns);
+  const style = past
+    ? ""
+    : "bg-[var(--bubble-bg)] rounded shadow p-3 my-1";
+  const [open, setOpen] = useState(false);
 
-    const handleSubmit = () => {
-        setShowModal(false)
-    }
-    const location = useLocation()
-    const past = location.pathname === "/past-coversation" ? true : false
-
-    const { reasoning, answer, inProgress } = parseThink(quesAns)
-
-    const style = {
-        width: "100%",
-        padding: "10px 10px 10px 20px"
-    }
-    if (!past) {
-        style.background = "var(--bubble-bg)"
-        style.boxShadow = "0px 2px 2px 0 rgba(0,0,0,0.2)"
-        style.borderRadius = "10px"
-        style.marginBlock = "3px"
-
-    }
-
-    return (
-        <Space
-            size="large"
-            align="start"
-            style={style}
-        >
-            <Modal
-                open={showModal}
-                title="Provide Additional Feedback"
-                onCancel={() => setShowModal(false)}
-                onOk={handleSubmit}
+  return (
+    <div className={`flex gap-3 ${style}`}>
+      <div className="w-20 shrink-0">
+        <img src={who === "user" ? userIcon : siteIcon} alt="icon" />
+      </div>
+      <div className="flex flex-col gap-1 text-sm">
+        <strong className="text-base">{who}</strong>
+        {reasoning && (
+          <div>
+            <button
+              className="flex items-center gap-1 text-xs text-gray-800 dark:text-gray-300"
+              onClick={() => setOpen((p) => !p)}
             >
-                <TextArea autoSize onChange={(e) => updateRatingFeedback(time, rating, e.target.value)} />
-            </Modal>
-            <div style={{ width: "80px" }}>
-                <img src={who === "user" ? userIcon : siteIcon} alt="user-icon" />
-            </div>
-            <Space direction="vertical">
-                <Typography.Text style={{ margin: 0, fontSize: "1.2rem" }} ><strong>{who}</strong></Typography.Text>
-                {reasoning && (
-                    <Collapse defaultActiveKey={[]} style={{ width: "100%" }}>
-                        <Collapse.Panel
-                            header={<Space>Thinking {inProgress && <Spin size="small" />}</Space>}
-                            key="think"
-                        >
-                            <Typography.Text style={{ fontFamily: "Open Sans,sans-serif" }}>
-                                <ReactMarkdown>{reasoning}</ReactMarkdown>
-                            </Typography.Text>
-                        </Collapse.Panel>
-                    </Collapse>
-                )}
-                {answer && (
-                    <Typography.Text copyable={{ text: answer }} style={{ fontFamily: "Open Sans,sans-serif" }}>
-                        <ReactMarkdown>
-                            {answer}
-                        </ReactMarkdown>
-                    </Typography.Text>
-                )}
-                <Space size="large" >
-                    <Typography.Text style={{ fontFamily: "Open Sans,sans-serif" }}>{time.split(',')[1]}</Typography.Text>
-                    {who != "user" && !past && (
-                        <Space size="large">
-                            <LikeOutlined onClick={() => setShowRating(prev => !prev)} />
-                            <DislikeOutlined onClick={() => setShowModal(true)} />
-                        </Space>
-                    )}
-                </Space>
-                {showRating &&
-                    <Rate
-                        value={rating}
-                        onChange={(ratingVal) => updateRatingFeedback(time, ratingVal, "")}
-                    />}
-                {past && feedback && <Typography.Text> <strong>Feedback</strong>:  {feedback} </Typography.Text>}
-            </Space>
-        </Space>
-    )
+              {open ? <MinusCircledIcon /> : <PlusCircledIcon />}
+              <svg
+                className="w-3 h-3 animate-spin ml-1 text-purple-600"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4l-3 3-3-3h4z"
+                />
+              </svg>
+              Thinking
+            </button>
+            {open && (
+              <div className="mt-1 text-xs text-gray-800 dark:text-gray-200 prose dark:prose-invert prose-sm max-w-none">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{reasoning}</ReactMarkdown>
+              </div>
+            )}
+          </div>
+        )}
+        {answer && (
+          <div className="prose prose-sm dark:prose-invert max-w-none">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{answer}</ReactMarkdown>
+          </div>
+        )}
+        <span className="text-xs text-gray-500">{time.split(",")[1]}</span>
+      </div>
+    </div>
+  );
 }
 
 export default ConversationComp;
-
