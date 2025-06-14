@@ -1,10 +1,37 @@
 import { useState } from "react";
-import { PlusCircledIcon, MinusCircledIcon } from "@radix-ui/react-icons";
+import { PlusCircledIcon, MinusCircledIcon, CopyIcon } from "@radix-ui/react-icons";
 import userIcon from "../assets/user-icon.png";
 import siteIcon from "../assets/site-icon.png";
 import { useLocation } from "react-router";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+
+const markdownComponents = {
+  code({ inline, className, children, ...props }) {
+    const code = String(children).replace(/\n$/, "");
+    if (inline) {
+      return (
+        <code className={className} {...props}>
+          {children}
+        </code>
+      );
+    }
+    return (
+      <div className="relative">
+        <button
+          className="absolute top-1 right-1 text-xs flex items-center gap-1 bg-gray-200 dark:bg-gray-700 px-1 rounded"
+          onClick={() => navigator.clipboard.writeText(code)}
+        >
+          <CopyIcon />
+          Copy
+        </button>
+        <pre>
+          <code className={className} {...props}>{children}</code>
+        </pre>
+      </div>
+    );
+  },
+};
 
 function parseThink(text) {
   const start = text.indexOf("<think>");
@@ -30,7 +57,7 @@ function parseThink(text) {
 function ConversationComp({ who, quesAns, time }) {
   const location = useLocation();
   const past = location.pathname === "/past-coversation";
-  const { reasoning, answer } = parseThink(quesAns);
+  const { reasoning, answer, inProgress } = parseThink(quesAns);
   const style = past
     ? ""
     : "bg-[var(--bubble-bg)] rounded shadow p-3 my-1";
@@ -46,42 +73,54 @@ function ConversationComp({ who, quesAns, time }) {
         {reasoning && (
           <div>
             <button
-              className="flex items-center gap-1 text-xs text-gray-800 dark:text-gray-300"
+              className="flex items-center gap-1 text-xs text-gray-900 dark:text-gray-300"
               onClick={() => setOpen((p) => !p)}
             >
               {open ? <MinusCircledIcon /> : <PlusCircledIcon />}
-              <svg
-                className="w-3 h-3 animate-spin ml-1 text-purple-600"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4l-3 3-3-3h4z"
-                />
-              </svg>
-              Thinking
+              {inProgress && (
+                <svg
+                  className="w-3 h-3 animate-spin ml-1 text-purple-600"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4l-3 3-3-3h4z"
+                  />
+                </svg>
+              )}
+              {inProgress ? "Thinking" : open ? "Hide Reasoning" : "Show Reasoning"}
             </button>
             {open && (
-              <div className="mt-1 text-xs text-gray-800 dark:text-gray-200">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{reasoning}</ReactMarkdown>
+              <div className="mt-1 text-xs text-gray-900 dark:text-gray-200">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={markdownComponents}
+                >
+                  {reasoning}
+                </ReactMarkdown>
               </div>
             )}
           </div>
         )}
         {answer && (
           <div className="prose prose-sm dark:prose-invert">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{answer}</ReactMarkdown>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={markdownComponents}
+            >
+              {answer}
+            </ReactMarkdown>
           </div>
         )}
         <span className="text-xs text-gray-500">{time.split(",")[1]}</span>
