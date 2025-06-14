@@ -3,9 +3,9 @@ import OpenAI from "openai";
 import { setChatData } from "../utils/localStorageUtils";
 
 // Environment variables
-const OPENROUTER_API_KEY = process.env.REACT_APP_OPENROUTER_API_KEY;
-const REACT_APP_GROQ_API_KEY = process.env.REACT_APP_GROQ_API_KEY;
-const REACT_APP_PERPLEXITY_API_KEY = process.env.REACT_APP_PERPLEXITY_API_KEY;
+const OPENROUTER_API_KEY = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
+const NEXT_PUBLIC_GROQ_API_KEY = process.env.NEXT_PUBLIC_GROQ_API_KEY;
+const NEXT_PUBLIC_PERPLEXITY_API_KEY = process.env.NEXT_PUBLIC_PERPLEXITY_API_KEY;
 
 export default function useConversation() {
   const [currentSession, setCurrentSession] = useState([]);
@@ -62,7 +62,7 @@ export default function useConversation() {
           {
             method: "POST",
             headers: {
-              Authorization: `Bearer ${REACT_APP_PERPLEXITY_API_KEY}`,
+              Authorization: `Bearer ${NEXT_PUBLIC_PERPLEXITY_API_KEY}`,
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
@@ -86,7 +86,7 @@ export default function useConversation() {
         setIsStreaming(false);
       } else if (selectedModelType === "groq") {
         const groqAPI = new OpenAI({
-          apiKey: REACT_APP_GROQ_API_KEY,
+          apiKey: NEXT_PUBLIC_GROQ_API_KEY,
           baseURL: "https://api.groq.com/openai/v1",
           dangerouslyAllowBrowser: true,
         });

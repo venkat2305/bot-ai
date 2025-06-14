@@ -1,12 +1,16 @@
-import { PlusCircledIcon } from "@radix-ui/react-icons";
-import { useNavigate } from "react-router-dom";
+import { PlusCircledIcon } from '@radix-ui/react-icons';
+import { useRouter } from 'next/router';
+import Link from 'next/link';
+import { useContext } from 'react';
+import { NewChatContext } from '../context/NewChatContext';
 
-function SideBar({ onNewChat, onToggleTheme, themeMode }) {
-  const navigate = useNavigate();
+function SideBar({ onToggleTheme, themeMode }) {
+  const router = useRouter();
+  const { handleNewChat } = useContext(NewChatContext);
 
   const handleNewChatClick = () => {
-    onNewChat();
-    navigate("/");
+    handleNewChat();
+    router.push('/');
   };
 
   return (
@@ -18,20 +22,19 @@ function SideBar({ onNewChat, onToggleTheme, themeMode }) {
         <PlusCircledIcon />
         New Chat
       </button>
-      <button
-        className="px-3 py-1 rounded bg-purple-500 text-white hover:bg-purple-600"
-        onClick={() => navigate("/past-coversation")}
-      >
-        <strong>Past Conversations</strong>
-      </button>
+      <Link href="/past-coversation" className="w-full">
+        <button className="w-full px-3 py-1 rounded bg-purple-500 text-white hover:bg-purple-600">
+          <strong>Past Conversations</strong>
+        </button>
+      </Link>
       <label className="flex items-center gap-2 cursor-pointer select-none">
         <input
           type="checkbox"
           className="h-4 w-4"
-          checked={themeMode === "dark"}
+          checked={themeMode === 'dark'}
           onChange={onToggleTheme}
         />
-        {themeMode === "dark" ? "Dark" : "Light"}
+        {themeMode === 'dark' ? 'Dark' : 'Light'}
       </label>
     </div>
   );

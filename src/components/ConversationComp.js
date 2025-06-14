@@ -1,15 +1,15 @@
-import { useState } from "react";
-import { PlusCircledIcon, MinusCircledIcon } from "@radix-ui/react-icons";
-import userIcon from "../assets/user-icon.png";
-import siteIcon from "../assets/site-icon.png";
-import { useLocation } from "react-router";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { useState } from 'react';
+import { PlusCircledIcon, MinusCircledIcon } from '@radix-ui/react-icons';
+import userIcon from '../assets/user-icon.png';
+import siteIcon from '../assets/site-icon.png';
+import { useRouter } from 'next/router';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 function parseThink(text) {
-  const start = text.indexOf("<think>");
-  const end = text.indexOf("</think>");
-  let reasoning = "";
+  const start = text.indexOf('<think>');
+  const end = text.indexOf('</think>');
+  let reasoning = '';
   let answer = text;
   let inProgress = false;
 
@@ -28,18 +28,16 @@ function parseThink(text) {
 }
 
 function ConversationComp({ who, quesAns, time }) {
-  const location = useLocation();
-  const past = location.pathname === "/past-coversation";
+  const router = useRouter();
+  const past = router.pathname === '/past-coversation';
   const { reasoning, answer } = parseThink(quesAns);
-  const style = past
-    ? ""
-    : "bg-[var(--bubble-bg)] rounded shadow p-3 my-1";
+  const style = past ? '' : 'bg-[var(--bubble-bg)] rounded shadow p-3 my-1';
   const [open, setOpen] = useState(false);
 
   return (
     <div className={`flex gap-3 ${style}`}>
       <div className="w-20 shrink-0">
-        <img src={who === "user" ? userIcon : siteIcon} alt="icon" />
+        <img src={who === 'user' ? userIcon : siteIcon} alt="icon" />
       </div>
       <div className="flex flex-col gap-1 text-sm">
         <strong className="text-base">{who}</strong>
@@ -84,7 +82,7 @@ function ConversationComp({ who, quesAns, time }) {
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{answer}</ReactMarkdown>
           </div>
         )}
-        <span className="text-xs text-gray-500">{time.split(",")[1]}</span>
+        <span className="text-xs text-gray-500">{time.split(',')[1]}</span>
       </div>
     </div>
   );
