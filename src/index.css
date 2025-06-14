@@ -8,6 +8,7 @@ body[data-theme='light'] {
   --primary-color: #722ed1;
   --card-bg: #f0e9fb;
   --bubble-bg: #eae5f3;
+  color-scheme: light;
 }
 
 pre {
@@ -33,6 +34,7 @@ body[data-theme='dark'] {
   --primary-color: #9254de;
   --card-bg: #1e1e1e;
   --bubble-bg: #262626;
+  color-scheme: dark;
 }
 
 body {
