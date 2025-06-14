@@ -1,13 +1,10 @@
 import { useState, useEffect } from "react";
-import SideBar from "./components/SideBar";
-import NewPage from "./pages/NewPage";
-import { Route, Routes } from "react-router-dom";
-import PastConversation from "./pages/PastConversation";
+import SideBar from "../components/SideBar";
+import "../index.css";
 
-function App() {
+function MyApp({ Component, pageProps }) {
   const [newChatKey, setNewChatKey] = useState(Date.now());
   const [themeMode, setThemeMode] = useState("light");
-
 
   const toggleTheme = () => {
     setThemeMode((prev) => (prev === "light" ? "dark" : "light"));
@@ -16,10 +13,10 @@ function App() {
   useEffect(() => {
     document.body.dataset.theme = themeMode;
   }, [themeMode]);
-  
+
   const handleNewChat = () => {
     setNewChatKey(Date.now());
-  }
+  };
 
   return (
     <div className="flex min-h-screen w-full">
@@ -31,16 +28,10 @@ function App() {
         />
       </div>
       <div className="flex-1">
-        <Routes>
-          <Route
-            path="/"
-            element={<NewPage key={newChatKey} style={{ flexGrow: 1 }} />}
-          />
-          <Route path="/past-coversation" element={<PastConversation />} />
-        </Routes>
+        <Component {...pageProps} key={newChatKey} />
       </div>
     </div>
   );
 }
 
-export default App;
+export default MyApp;
