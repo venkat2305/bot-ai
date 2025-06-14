@@ -1,12 +1,12 @@
 import { PlusCircledIcon } from "@radix-ui/react-icons";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/router";
 
 function SideBar({ onNewChat, onToggleTheme, themeMode }) {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const handleNewChatClick = () => {
     onNewChat();
-    navigate("/");
+    router.push("/");
   };
 
   return (
@@ -20,7 +20,7 @@ function SideBar({ onNewChat, onToggleTheme, themeMode }) {
       </button>
       <button
         className="px-3 py-1 rounded bg-purple-500 text-white hover:bg-purple-600"
-        onClick={() => navigate("/past-coversation")}
+        onClick={() => router.push("/past-coversation")}
       >
         <strong>Past Conversations</strong>
       </button>

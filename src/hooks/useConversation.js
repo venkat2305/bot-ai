@@ -3,9 +3,9 @@ import OpenAI from "openai";
 import { setChatData } from "../utils/localStorageUtils";
 
 // Environment variables
-const OPENROUTER_API_KEY = process.env.REACT_APP_OPENROUTER_API_KEY;
-const REACT_APP_GROQ_API_KEY = process.env.REACT_APP_GROQ_API_KEY;
-const REACT_APP_PERPLEXITY_API_KEY = process.env.REACT_APP_PERPLEXITY_API_KEY;
+const OPENROUTER_API_KEY = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
+const REACT_APP_GROQ_API_KEY = process.env.NEXT_PUBLIC_GROQ_API_KEY;
+const REACT_APP_PERPLEXITY_API_KEY = process.env.NEXT_PUBLIC_PERPLEXITY_API_KEY;
 
 export default function useConversation() {
   const [currentSession, setCurrentSession] = useState([]);
