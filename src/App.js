@@ -6,7 +6,7 @@ import PastConversation from "./pages/PastConversation";
 
 function App() {
   const [newChatKey, setNewChatKey] = useState(Date.now());
-  const [themeMode, setThemeMode] = useState("light");
+  const [themeMode, setThemeMode] = useState("dark");
 
 
   const toggleTheme = () => {
@@ -15,6 +15,11 @@ function App() {
 
   useEffect(() => {
     document.body.dataset.theme = themeMode;
+    if (themeMode === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
   }, [themeMode]);
   
   const handleNewChat = () => {
