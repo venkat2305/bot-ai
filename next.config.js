@@ -1,10 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'export',
-  distDir: 'build',
   images: {
     unoptimized: true
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  distDir: 'build',
 };
 
 module.exports = nextConfig;

@@ -15,5 +15,6 @@ npm run build
 npm start
 ```
 
-The build output is generated in the `build` directory using Next.js
-`output: 'export'` so Vercel can detect the static site.
+`npm run build` exports a static site into the `build` folder. `npm start`
+serves that folder locally. All environment variables must use the
+`NEXT_PUBLIC_` prefix so they are available in the browser.
