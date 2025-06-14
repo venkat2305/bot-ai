@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import ConversationComp from "../components/ConversationComp";
 
-function PastConversation() {
+export default function PastConversation() {
   const [localData, setLocalData] = useState([]);
 
   useEffect(() => {
@@ -30,5 +30,3 @@ function PastConversation() {
     </div>
   );
 }
-
-export default PastConversation;
