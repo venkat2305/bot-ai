@@ -6,19 +6,14 @@ export default function useOpenRouterModels() {
   useEffect(() => {
     async function getOpenRouterModels() {
       try {
-        const response = await fetch("https://openrouter.ai/api/v1/models", {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        const data = await response.json();
-        const freeModelArr = data.data.filter(
-          (model) =>
-            model.pricing.prompt === "0" && model.pricing.completion === "0"
-        );
-        setOpenRouterModels(freeModelArr);
+        const response = await fetch('/api/openrouter/models');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const models = await response.json();
+        setOpenRouterModels(models);
       } catch (error) {
-        console.log(error);
+        console.error('Error fetching OpenRouter models:', error);
       }
     }
 

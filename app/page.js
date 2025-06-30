@@ -1,10 +1,12 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import SideBar from "./components/SideBar";
-import ConversationContainer from "./components/ConversationContainer";
+import SideBar from "../src/components/SideBar";
+import ConversationContainer from "../src/components/ConversationContainer";
 
-function App() {
-  const [themeMode, setThemeMode] = useState("dark");
+export default function Home() {
+  const [themeMode, setThemeMode] = useState("light");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentChatId, setCurrentChatId] = useState(null);
   const [conversationKey, setConversationKey] = useState(Date.now());
@@ -71,6 +73,4 @@ function App() {
       </div>
     </div>
   );
-}
-
-export default App;
+} 

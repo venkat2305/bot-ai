@@ -1,24 +1,19 @@
 import { useState, useEffect } from "react";
-import OpenAI from "openai";
-
-const REACT_APP_GROQ_API_KEY = process.env.REACT_APP_GROQ_API_KEY;
 
 export default function useGroqModels() {
   const [groqModels, setGroqModels] = useState([]);
 
   useEffect(() => {
-    const groq = new OpenAI({
-      apiKey: REACT_APP_GROQ_API_KEY,
-      baseURL: "https://api.groq.com/openai/v1",
-      dangerouslyAllowBrowser: true,
-    });
-
     async function getGroqModels() {
       try {
-        const res = await groq.models.list();
-        setGroqModels(res.data);
+        const response = await fetch('/api/groq/models');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const models = await response.json();
+        setGroqModels(models);
       } catch (error) {
-        console.log(error);
+        console.error('Error fetching Groq models:', error);
       }
     }
 

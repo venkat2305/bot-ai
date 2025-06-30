@@ -1,70 +1,97 @@
-# Getting Started with Create React App
+# Bot AI - Next.js Application
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This is an AI chatbot application built with Next.js, featuring multiple AI model integrations including Groq, OpenRouter, and Perplexity models.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- Modern chat interface with sidebar navigation
+- Multiple AI model support (Groq, OpenRouter, Perplexity)
+- Chat history and persistence using localStorage
+- Real-time streaming responses
+- Dark/Light theme toggle
+- Responsive design with Tailwind CSS
+- Smooth animations with Framer Motion
 
-### `npm start`
+## Getting Started
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### Prerequisites
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- Node.js 18+ 
+- npm or yarn
 
-### `npm test`
+### Installation
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+1. Clone the repository
+2. Install dependencies:
 
-### `npm run build`
+```bash
+npm install
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+3. Set up environment variables:
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Create a `.env.local` file in the root directory and add your API keys:
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```env
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+GROQ_API_KEY=your_groq_api_key_here
+PERPLEXITY_API_KEY=your_perplexity_api_key_here
+```
 
-### `npm run eject`
+**Note:** These API keys are now securely handled on the server side and will not be exposed to the client.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Running the Application
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+#### Development Mode
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+```bash
+npm run dev
+```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Open [http://localhost:3000](http://localhost:3000) to view the application in your browser.
+
+The page will reload when you make changes and you'll see any lint errors in the console.
+
+#### Production Build
+
+```bash
+npm run build
+npm start
+```
+
+Builds the app for production and starts the production server.
+
+## Project Structure
+
+- `/pages` - Next.js pages and routing
+- `/src/components` - React components
+- `/src/hooks` - Custom React hooks
+- `/src/utils` - Utility functions
+- `/src/assets` - Static assets
+- `/public` - Public static files
+
+## API Keys Setup
+
+To use the AI features, you'll need to obtain API keys from:
+
+- [Groq](https://groq.com/) - For Groq models
+- [OpenRouter](https://openrouter.ai/) - For various AI models
+- [Perplexity](https://perplexity.ai/) - For Perplexity models
+
+## Technologies Used
+
+- Next.js 14
+- React 18
+- Tailwind CSS
+- Framer Motion
+- OpenAI SDK
+- Groq SDK
+- React Markdown
+- Lucide React Icons
 
 ## Learn More
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+To learn more about Next.js, check out the following resources:
 
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial

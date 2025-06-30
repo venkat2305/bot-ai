@@ -1,16 +1,10 @@
 import { useState, useEffect } from "react";
-import OpenAI from "openai";
 import { 
   saveChat, 
   generateChatId, 
   generateChatTitle, 
   getChatById 
 } from "../utils/localStorageUtils";
-
-// Environment variables
-const OPENROUTER_API_KEY = process.env.REACT_APP_OPENROUTER_API_KEY;
-const REACT_APP_GROQ_API_KEY = process.env.REACT_APP_GROQ_API_KEY;
-const REACT_APP_PERPLEXITY_API_KEY = process.env.REACT_APP_PERPLEXITY_API_KEY;
 
 export default function useConversation(initialChatId = null) {
   const [currentChatId, setCurrentChatId] = useState(initialChatId);
@@ -103,156 +97,91 @@ export default function useConversation(initialChatId = null) {
     messages.push({ role: "user", content: input });
 
     try {
+      const shouldStream = false;
+      let apiEndpoint = '';
+      
+      // Determine which API endpoint to use
       if (selectedModelType === "perplexity") {
-        const response = await fetch(
-          "https://api.perplexity.ai/chat/completions",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${REACT_APP_PERPLEXITY_API_KEY}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              model: selectedModel,
-              messages: messages,
-              stream: isReasoningModel(selectedModelType, selectedModel),
-            }),
-          }
-        );
+        apiEndpoint = '/api/chat/perplexity';
+      } else if (selectedModelType === "groq") {
+        apiEndpoint = '/api/chat/groq';
+      } else if (selectedModelType === "openrouter") {
+        apiEndpoint = '/api/chat/openrouter';
+      }
 
-        if (isReasoningModel(selectedModelType, selectedModel)) {
-          // Handle streaming for reasoning models
-          const reader = response.body.getReader();
-          const decoder = new TextDecoder();
+      const response = await fetch(apiEndpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: selectedModel,
+          messages: messages,
+          stream: shouldStream,
+        }),
+      });
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      if (shouldStream) {
+        // Handle streaming responses
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        const processStream = async () => {
           while (true) {
             const { value, done } = await reader.read();
             if (done) break;
-
-            const chunk = decoder.decode(value);
-            const lines = chunk.split("\n").filter((line) => line.trim() !== "");
-
-            for (const line of lines) {
-              if (line.startsWith("data: ")) {
-                const data = line.slice(6);
-                if (data === "[DONE]") continue;
-
+            
+            buffer += decoder.decode(value, { stream: true });
+            const parts = buffer.split("\n\n");
+            
+            for (let i = 0; i < parts.length - 1; i++) {
+              const part = parts[i];
+              if (part.startsWith("data: ")) {
+                const data = part.slice(6);
+                if (data === "[DONE]") {
+                  return;
+                }
                 try {
                   const parsed = JSON.parse(data);
-                  const content = parsed.choices[0]?.delta?.content || "";
+                  const content = parsed.content || "";
                   fullResponse += content;
                   setStreamingResponse((prev) => prev + content);
                 } catch (e) {
-                  console.error("Error parsing JSON:", e);
+                  console.error("Error parsing JSON:", e, "Received:", data);
                 }
               }
             }
+            buffer = parts[parts.length - 1];
           }
-        } else {
-          // Handle non-streaming for non-reasoning models
-          const data = await response.json();
-          fullResponse = data.choices[0].message.content;
-        }
-
-        const aiMessage = {
-          who: "Soul AI",
-          quesAns: fullResponse,
-          time: new Date().toLocaleString(),
-          rating: 0,
-          feedback: "",
         };
-        const updatedSession = [...currentSession, newUserMessage, aiMessage];
-        setCurrentSession(updatedSession);
-        await autoSave(updatedSession);
-        setIsStreaming(false);
-        setStreamingResponse("");
-      } else if (selectedModelType === "groq") {
-        const groqAPI = new OpenAI({
-          apiKey: REACT_APP_GROQ_API_KEY,
-          baseURL: "https://api.groq.com/openai/v1",
-          dangerouslyAllowBrowser: true,
-        });
-        const stream = await groqAPI.chat.completions.create({
-          model: selectedModel,
-          messages: messages,
-          stream: true,
-        });
+        
+        await processStream();
 
-        for await (const chunk of stream) {
-          const content = chunk.choices[0]?.delta?.content || "";
-          fullResponse += content;
-          setStreamingResponse((prev) => prev + content);
-        }
-
-        // Final update
-        const aiMessage = {
-          who: "Soul AI",
-          quesAns: fullResponse,
-          time: new Date().toLocaleString(),
-          rating: 0,
-          feedback: "",
-        };
-        const updatedSession = [...currentSession, newUserMessage, aiMessage];
-        setCurrentSession(updatedSession);
-        await autoSave(updatedSession);
-        setIsStreaming(false);
-        setStreamingResponse("");
-      } else if (selectedModelType === "openrouter") {
-        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: selectedModel,
-            messages: messages,
-            stream: true,
-          }),
-        });
-
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-
-          const chunk = decoder.decode(value);
-          const lines = chunk.split("\n").filter((line) => line.trim() !== "");
-
-          for (const line of lines) {
-            if (line.startsWith("data: ")) {
-              const data = line.slice(6);
-              if (data === "[DONE]") continue;
-
-              try {
-                const parsed = JSON.parse(data);
-                const content = parsed.choices[0]?.delta?.content || "";
-                fullResponse += content;
-                setStreamingResponse((prev) => prev + content);
-              } catch (e) {
-                console.error("Error parsing JSON:", e);
-              }
-            }
-          }
-        }
-
-        const aiMessage = {
-          who: "Soul AI",
-          quesAns: fullResponse,
-          time: new Date().toLocaleString(),
-          rating: 0,
-          feedback: "",
-        };
-        const updatedSession = [...currentSession, newUserMessage, aiMessage];
-        setCurrentSession(updatedSession);
-        await autoSave(updatedSession);
-        setIsStreaming(false);
-        setStreamingResponse("");
+      } else {
+        // Handle non-streaming responses
+        const data = await response.json();
+        fullResponse = data.choices[0].message.content;
       }
+
+      const aiMessage = {
+        who: "Soul AI",
+        quesAns: fullResponse,
+        time: new Date().toLocaleString(),
+        rating: 0,
+        feedback: "",
+      };
+      const updatedSession = [...currentSession, newUserMessage, aiMessage];
+      setCurrentSession(updatedSession);
+      await autoSave(updatedSession);
+      setIsStreaming(false);
+      setStreamingResponse("");
     } catch (error) {
-      console.log(error);
+      console.error('Error getting AI response:', error);
       setIsStreaming(false);
       setStreamingResponse("");
     } finally {

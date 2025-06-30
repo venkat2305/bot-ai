@@ -1,6 +1,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Sparkles, Loader2 } from "lucide-react";
+import Image from "next/image";
 import InputBar from "../components/InputBar";
 import ConversationComp from "../components/ConversationComp";
 import ConversationStarter from "../components/ConversationStarter";
@@ -28,18 +29,24 @@ function ConversationContainer({ chatId }) {
   const { openRouterModels } = useOpenRouterModels();
   const { groqModels } = useGroqModels();
   const perplexityModels = ["r1-1776"];
+  const [conversationStarters, setConversationStarters] = React.useState([]);
 
-  const conversationStarters = React.useMemo(() => {
+  React.useEffect(() => {
     const starters = [];
-    let t = 4;
-    while (t--) {
-      let randNum = Math.floor(Math.random() * sampleData.length);
-      starters.push({
-        question: sampleData[randNum].question,
-        subtext: "Get immediate AI generated response",
-      });
+    const usedIndices = new Set();
+    const numStarters = Math.min(4, sampleData.length);
+
+    while (starters.length < numStarters) {
+      const randNum = Math.floor(Math.random() * sampleData.length);
+      if (!usedIndices.has(randNum)) {
+        starters.push({
+          question: sampleData[randNum].question,
+          subtext: "Get immediate AI generated response",
+        });
+        usedIndices.add(randNum);
+      }
     }
-    return starters;
+    setConversationStarters(starters);
   }, []);
 
   const [inputText, setInputText] = React.useState("");
@@ -186,7 +193,7 @@ function ConversationContainer({ chatId }) {
                   }}
                   className="w-24 h-24 mx-auto mb-6 p-4 rounded-2xl bg-gradient-to-br from-[var(--primary-color)] to-[var(--primary-hover)] shadow-2xl"
                 >
-                  <img src={siteIcon} alt="AI Assistant" className="w-full h-full object-contain" />
+                  <Image src={siteIcon} alt="AI Assistant" className="w-full h-full object-contain" />
                 </motion.div>
                 <h2 className="text-3xl font-bold mb-3" style={{ color: "var(--text-color)" }}>
                   How Can I Help You Today?
