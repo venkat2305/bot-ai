@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Send, Save, Paperclip } from "lucide-react";
+import { Send, Paperclip } from "lucide-react";
 import clsx from "clsx";
 
-function InputBar({ inputText, setInputText, onAsk, onSave }) {
+function InputBar({ inputText, setInputText, onAsk }) {
   const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef(null);
 
@@ -70,20 +70,6 @@ function InputBar({ inputText, setInputText, onAsk, onSave }) {
         </div>
 
         <div className="flex items-center gap-2">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={onSave}
-            className={clsx(
-              "p-2.5 rounded-xl transition-all duration-200",
-              "bg-[var(--bg-tertiary)] hover:bg-[var(--bubble-bg)]",
-              "border border-[var(--border-color)]"
-            )}
-            title="Save Conversation"
-          >
-            <Save className="w-4 h-4" style={{ color: "var(--text-secondary)" }} />
-          </motion.button>
-
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}

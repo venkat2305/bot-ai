@@ -1,9 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronUp, Brain, User, Bot } from "lucide-react";
-import userIcon from "../assets/user-icon.png";
-import siteIcon from "../assets/site-icon.png";
-import { useLocation } from "react-router";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import clsx from "clsx";
@@ -32,8 +29,6 @@ function parseThink(text) {
 }
 
 function ConversationComp({ who, quesAns, time }) {
-  const location = useLocation();
-  const past = location.pathname === "/past-coversation";
   const { reasoning, answer, inProgress } = parseThink(quesAns);
   const [open, setOpen] = useState(inProgress); // Auto-open when reasoning is in progress
   const isUser = who === "user";

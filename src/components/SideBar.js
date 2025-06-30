@@ -1,5 +1,5 @@
-import { motion } from "framer-motion";
-import { useNavigate, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
 import { 
   Plus, 
   MessageSquare, 
@@ -7,34 +7,69 @@ import {
   Moon, 
   Menu,
   Sparkles,
-  History
+  Trash2,
+  Clock
 } from "lucide-react";
 import clsx from "clsx";
+import { getRecentChats, deleteChat } from "../utils/localStorageUtils";
 
-function SideBar({ onNewChat, onToggleTheme, themeMode, collapsed, onToggleCollapse }) {
-  const navigate = useNavigate();
-  const location = useLocation();
+function SideBar({ 
+  onNewChat, 
+  onToggleTheme, 
+  themeMode, 
+  collapsed, 
+  onToggleCollapse,
+  onChatSelect,
+  currentChatId
+}) {
+  const [recentChats, setRecentChats] = useState([]);
+
+  useEffect(() => {
+    loadRecentChats();
+    
+    // Refresh chats every 2 seconds to catch new auto-saved chats
+    const interval = setInterval(loadRecentChats, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const loadRecentChats = () => {
+    const chats = getRecentChats(15);
+    setRecentChats(chats);
+  };
 
   const handleNewChatClick = () => {
     onNewChat();
-    navigate("/");
   };
 
-  const menuItems = [
-    {
-      icon: Plus,
-      label: "New Chat",
-      onClick: handleNewChatClick,
-      primary: true,
-      active: location.pathname === "/"
-    },
-    {
-      icon: History,
-      label: "Past Conversations",
-      onClick: () => navigate("/past-coversation"),
-      active: location.pathname === "/past-coversation"
+  const handleChatSelect = (chat) => {
+    onChatSelect(chat);
+  };
+
+  const handleDeleteChat = (e, chatId) => {
+    e.stopPropagation();
+    deleteChat(chatId);
+    loadRecentChats();
+    if (currentChatId === chatId) {
+      onNewChat();
     }
-  ];
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else if (diffDays === 1) {
+      return 'Yesterday';
+    } else if (diffDays < 7) {
+      return `${diffDays} days ago`;
+    } else {
+      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen p-4 gap-4">
@@ -61,41 +96,113 @@ function SideBar({ onNewChat, onToggleTheme, themeMode, collapsed, onToggleColla
         </button>
       </div>
 
-      <div className="flex flex-col gap-2 flex-1">
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          return (
+      <motion.button
+        onClick={handleNewChatClick}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        className={clsx(
+          "flex items-center gap-3 p-3 rounded-xl transition-all duration-200 text-left w-full",
+          "bg-gradient-to-r from-[var(--primary-color)] to-[var(--primary-hover)] text-white shadow-lg",
+          collapsed && "justify-center"
+        )}
+        title={collapsed ? "New Chat" : undefined}
+      >
+        <Plus className="w-5 h-5 flex-shrink-0" />
+        {!collapsed && (
+          <motion.span
+            initial={{ opacity: 0, width: 0 }}
+            animate={{ opacity: 1, width: "auto" }}
+            exit={{ opacity: 0, width: 0 }}
+            className="text-sm font-medium whitespace-nowrap overflow-hidden"
+          >
+            New Chat
+          </motion.span>
+        )}
+      </motion.button>
+
+      {!collapsed && recentChats.length > 0 && (
+        <div className="flex-1 min-h-0 flex flex-col">
+          <div className="flex items-center gap-2 mb-3 px-2">
+            <Clock className="w-4 h-4" style={{ color: "var(--text-secondary)" }} />
+            <span className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
+              Recent Chats
+            </span>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto scrollbar-thin space-y-1">
+            <AnimatePresence>
+              {recentChats.map((chat, index) => (
+                <motion.div
+                  key={chat.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ delay: index * 0.05 }}
+                  className={clsx(
+                    "group relative p-3 rounded-lg cursor-pointer transition-all duration-200",
+                    "hover:bg-[var(--bg-tertiary)] border border-transparent",
+                    currentChatId === chat.id 
+                      ? "bg-[var(--bg-tertiary)] border-[var(--primary-color)]" 
+                      : "hover:border-[var(--border-color)]"
+                  )}
+                  onClick={() => handleChatSelect(chat)}
+                >
+                  <div className="flex items-start gap-3">
+                    <MessageSquare className="w-4 h-4 mt-0.5 flex-shrink-0" 
+                      style={{ color: "var(--text-secondary)" }} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate" 
+                         style={{ color: "var(--text-color)" }}>
+                        {chat.title}
+                      </p>
+                      <p className="text-xs truncate mt-1" 
+                         style={{ color: "var(--text-muted)" }}>
+                        {formatDate(chat.updatedAt)}
+                      </p>
+                    </div>
+                    <motion.button
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ 
+                        opacity: 1, 
+                        scale: 1 
+                      }}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={(e) => handleDeleteChat(e, chat.id)}
+                      className="opacity-0 group-hover:opacity-100 p-1 rounded transition-all duration-200 hover:bg-red-100 dark:hover:bg-red-900/20"
+                      title="Delete chat"
+                    >
+                      <Trash2 className="w-3 h-3 text-red-500" />
+                    </motion.button>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        </div>
+      )}
+
+      {collapsed && (
+        <div className="flex-1 flex flex-col gap-2">
+          {recentChats.slice(0, 5).map((chat) => (
             <motion.button
-              key={item.label}
-              onClick={item.onClick}
+              key={chat.id}
+              onClick={() => handleChatSelect(chat)}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className={clsx(
-                "flex items-center gap-3 p-3 rounded-xl transition-all duration-200 text-left w-full",
-                item.primary
-                  ? "bg-gradient-to-r from-[var(--primary-color)] to-[var(--primary-hover)] text-white shadow-lg"
-                  : item.active
-                  ? "bg-[var(--bg-tertiary)] border border-[var(--border-color)]"
-                  : "hover:bg-[var(--bg-tertiary)] border border-transparent",
-                collapsed && "justify-center"
+                "p-3 rounded-xl transition-all duration-200",
+                currentChatId === chat.id 
+                  ? "bg-[var(--bg-tertiary)] border border-[var(--primary-color)]"
+                  : "hover:bg-[var(--bg-tertiary)] border border-transparent"
               )}
-              title={collapsed ? item.label : undefined}
+              title={chat.title}
             >
-              <Icon className="w-5 h-5 flex-shrink-0" />
-              {!collapsed && (
-                <motion.span
-                  initial={{ opacity: 0, width: 0 }}
-                  animate={{ opacity: 1, width: "auto" }}
-                  exit={{ opacity: 0, width: 0 }}
-                  className="text-sm font-medium whitespace-nowrap overflow-hidden"
-                >
-                  {item.label}
-                </motion.span>
-              )}
+              <MessageSquare className="w-5 h-5" style={{ color: "var(--text-secondary)" }} />
             </motion.button>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      )}
 
       <div className="mt-auto">
         <motion.button

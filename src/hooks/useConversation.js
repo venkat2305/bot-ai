@@ -1,13 +1,19 @@
 import { useState, useEffect } from "react";
 import OpenAI from "openai";
-import { setChatData } from "../utils/localStorageUtils";
+import { 
+  saveChat, 
+  generateChatId, 
+  generateChatTitle, 
+  getChatById 
+} from "../utils/localStorageUtils";
 
 // Environment variables
 const OPENROUTER_API_KEY = process.env.REACT_APP_OPENROUTER_API_KEY;
 const REACT_APP_GROQ_API_KEY = process.env.REACT_APP_GROQ_API_KEY;
 const REACT_APP_PERPLEXITY_API_KEY = process.env.REACT_APP_PERPLEXITY_API_KEY;
 
-export default function useConversation() {
+export default function useConversation(initialChatId = null) {
+  const [currentChatId, setCurrentChatId] = useState(initialChatId);
   const [currentSession, setCurrentSession] = useState([]);
   const [selectedModelType, setSelectedModelType] = useState("groq");
   const [selectedModel, setSelectedModel] = useState(
@@ -18,9 +24,30 @@ export default function useConversation() {
   const [streamingResponse, setStreamingResponse] = useState("");
 
   useEffect(() => {
-    // Reset session or load if needed
+    if (initialChatId) {
+      loadChat(initialChatId);
+    } else {
+      setCurrentSession([]);
+      setCurrentChatId(null);
+    }
+  }, [initialChatId]);
+
+  const loadChat = (chatId) => {
+    const chat = getChatById(chatId);
+    if (chat) {
+      setCurrentChatId(chatId);
+      setCurrentSession(chat.messages || []);
+      setSelectedModelType(chat.modelType || "groq");
+      setSelectedModel(chat.model || "meta-llama/llama-4-maverick-17b-128e-instruct");
+    }
+  };
+
+  const startNewChat = () => {
+    setCurrentChatId(null);
     setCurrentSession([]);
-  }, []);
+    setSelectedModelType("groq");
+    setSelectedModel("meta-llama/llama-4-maverick-17b-128e-instruct");
+  };
 
   useEffect(() => {
     // Optionally set default models when user changes model types
@@ -40,7 +67,7 @@ export default function useConversation() {
       time: new Date().toLocaleString(),
     };
     setCurrentSession((prev) => [...prev, newUserMessage]);
-    await getAiAnswer(input);
+    await getAiAnswer(input, newUserMessage);
   };
 
   // Helper function to check if a model is a reasoning model
@@ -54,7 +81,7 @@ export default function useConversation() {
     return reasoningModels.some(model => modelId.includes(model) || modelId === model);
   };
 
-  const getAiAnswer = async (input) => {
+  const getAiAnswer = async (input, newUserMessage) => {
     setLoading(true);
     setIsStreaming(true);
     setStreamingResponse("");
@@ -127,16 +154,16 @@ export default function useConversation() {
           fullResponse = data.choices[0].message.content;
         }
 
-        setCurrentSession((prev) => [
-          ...prev,
-          {
-            who: "Soul AI",
-            quesAns: fullResponse,
-            time: new Date().toLocaleString(),
-            rating: 0,
-            feedback: "",
-          },
-        ]);
+        const aiMessage = {
+          who: "Soul AI",
+          quesAns: fullResponse,
+          time: new Date().toLocaleString(),
+          rating: 0,
+          feedback: "",
+        };
+        const updatedSession = [...currentSession, newUserMessage, aiMessage];
+        setCurrentSession(updatedSession);
+        await autoSave(updatedSession);
         setIsStreaming(false);
         setStreamingResponse("");
       } else if (selectedModelType === "groq") {
@@ -158,16 +185,16 @@ export default function useConversation() {
         }
 
         // Final update
-        setCurrentSession((prev) => [
-          ...prev,
-          {
-            who: "Soul AI",
-            quesAns: fullResponse,
-            time: new Date().toLocaleString(),
-            rating: 0,
-            feedback: "",
-          },
-        ]);
+        const aiMessage = {
+          who: "Soul AI",
+          quesAns: fullResponse,
+          time: new Date().toLocaleString(),
+          rating: 0,
+          feedback: "",
+        };
+        const updatedSession = [...currentSession, newUserMessage, aiMessage];
+        setCurrentSession(updatedSession);
+        await autoSave(updatedSession);
         setIsStreaming(false);
         setStreamingResponse("");
       } else if (selectedModelType === "openrouter") {
@@ -211,16 +238,16 @@ export default function useConversation() {
           }
         }
 
-        setCurrentSession((prev) => [
-          ...prev,
-          {
-            who: "Soul AI",
-            quesAns: fullResponse,
-            time: new Date().toLocaleString(),
-            rating: 0,
-            feedback: "",
-          },
-        ]);
+        const aiMessage = {
+          who: "Soul AI",
+          quesAns: fullResponse,
+          time: new Date().toLocaleString(),
+          rating: 0,
+          feedback: "",
+        };
+        const updatedSession = [...currentSession, newUserMessage, aiMessage];
+        setCurrentSession(updatedSession);
+        await autoSave(updatedSession);
         setIsStreaming(false);
         setStreamingResponse("");
       }
@@ -233,9 +260,37 @@ export default function useConversation() {
     }
   };
 
-  const onSave = () => {
-    setChatData(currentSession);
-    console.log("session saved", currentSession);
+  const autoSave = async (updatedSession) => {
+    if (updatedSession.length === 0) return;
+
+    let chatId = currentChatId;
+    let title = "";
+    
+    if (!chatId) {
+      chatId = generateChatId();
+      setCurrentChatId(chatId);
+      title = generateChatTitle(updatedSession[0]?.quesAns);
+    }
+
+    const chatData = {
+      id: chatId,
+      title: title || generateChatTitle(updatedSession[0]?.quesAns),
+      messages: updatedSession,
+      modelType: selectedModelType,
+      model: selectedModel
+    };
+
+    const success = saveChat(chatData);
+    if (success) {
+      console.log("Chat auto-saved:", chatId);
+    }
+    return chatId;
+  };
+
+  const onSave = async () => {
+    const chatId = await autoSave(currentSession);
+    console.log("Chat manually saved:", chatId);
+    return chatId;
   };
 
   const updateRatingFeedback = (time, rating, feedback) => {
@@ -253,6 +308,7 @@ export default function useConversation() {
 
   return {
     currentSession,
+    currentChatId,
     selectedModelType,
     setSelectedModelType,
     selectedModel,
@@ -263,5 +319,7 @@ export default function useConversation() {
     onAsk,
     onSave,
     updateRatingFeedback,
+    loadChat,
+    startNewChat,
   };
 }

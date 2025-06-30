@@ -11,7 +11,7 @@ import useOpenRouterModels from "../hooks/useOpenRouterModels";
 import useGroqModels from "../hooks/useGroqModels";
 import clsx from "clsx";
 
-function ConversationContainer() {
+function ConversationContainer({ chatId }) {
   const {
     currentSession,
     isStreaming,
@@ -23,7 +23,7 @@ function ConversationContainer() {
     setSelectedModel,
     onAsk,
     onSave,
-  } = useConversation();
+  } = useConversation(chatId);
 
   const { openRouterModels } = useOpenRouterModels();
   const { groqModels } = useGroqModels();
