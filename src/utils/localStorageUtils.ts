@@ -1,10 +1,17 @@
+import { Chat, Message } from "../hooks/useConversation";
+
 const CHAT_STORAGE_KEY = "chatBotData";
 
-export function generateChatId() {
+export interface StoredChat extends Chat {
+  createdAt: string;
+  updatedAt: string;
+}
+
+export function generateChatId(): string {
   return `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
-export function generateChatTitle(firstMessage) {
+export function generateChatTitle(firstMessage?: string): string {
   if (!firstMessage) return "New Chat";
   
   const words = firstMessage.split(' ').slice(0, 6);
@@ -17,10 +24,10 @@ export function generateChatTitle(firstMessage) {
   return title || "New Chat";
 }
 
-export function saveChat(chatData) {
+export function saveChat(chatData: Chat): boolean {
   try {
     const existing = localStorage.getItem(CHAT_STORAGE_KEY);
-    let chats = existing ? JSON.parse(existing) : [];
+    let chats: StoredChat[] = existing ? JSON.parse(existing) : [];
     
     const existingIndex = chats.findIndex(chat => chat.id === chatData.id);
     
@@ -38,7 +45,7 @@ export function saveChat(chatData) {
       });
     }
     
-    chats.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+    chats.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
     
     localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(chats));
     return true;
@@ -48,20 +55,20 @@ export function saveChat(chatData) {
   }
 }
 
-export function getAllChats() {
+export function getAllChats(): StoredChat[] {
   try {
     const existing = localStorage.getItem(CHAT_STORAGE_KEY);
     if (!existing) return [];
     
-    const chats = JSON.parse(existing);
-    return chats.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+    const chats: StoredChat[] = JSON.parse(existing);
+    return chats.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
   } catch (error) {
     console.error('Error getting chats:', error);
     return [];
   }
 }
 
-export function getChatById(chatId) {
+export function getChatById(chatId: string): StoredChat | null {
   try {
     const chats = getAllChats();
     return chats.find(chat => chat.id === chatId) || null;
@@ -71,7 +78,7 @@ export function getChatById(chatId) {
   }
 }
 
-export function getRecentChats(limit = 15) {
+export function getRecentChats(limit: number = 15): StoredChat[] {
   try {
     const chats = getAllChats();
     return chats.slice(0, limit);
@@ -81,7 +88,7 @@ export function getRecentChats(limit = 15) {
   }
 }
 
-export function deleteChat(chatId) {
+export function deleteChat(chatId: string): boolean {
   try {
     const chats = getAllChats();
     const filtered = chats.filter(chat => chat.id !== chatId);
@@ -93,7 +100,7 @@ export function deleteChat(chatId) {
   }
 }
 
-export function clearAllChats() {
+export function clearAllChats(): boolean {
   try {
     localStorage.removeItem(CHAT_STORAGE_KEY);
     return true;
@@ -103,11 +110,11 @@ export function clearAllChats() {
   }
 }
 
-export function setChatData(sessionData) {
+export function setChatData(sessionData: Message[]): boolean {
   const chatId = generateChatId();
   const title = generateChatTitle(sessionData[0]?.quesAns);
   
-  const chatData = {
+  const chatData: Chat = {
     id: chatId,
     title,
     messages: sessionData,
@@ -118,6 +125,6 @@ export function setChatData(sessionData) {
   return saveChat(chatData);
 }
 
-export function getChatData() {
+export function getChatData(): StoredChat[] {
   return getAllChats();
 }

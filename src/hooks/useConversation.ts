@@ -6,16 +6,34 @@ import {
   getChatById 
 } from "../utils/localStorageUtils";
 
-export default function useConversation(initialChatId = null) {
-  const [currentChatId, setCurrentChatId] = useState(initialChatId);
-  const [currentSession, setCurrentSession] = useState([]);
-  const [selectedModelType, setSelectedModelType] = useState("groq");
-  const [selectedModel, setSelectedModel] = useState(
+export interface Message {
+  who: string;
+  quesAns: string;
+  time: string;
+  rating?: number;
+  feedback?: string;
+}
+
+export interface Chat {
+  id: string;
+  title: string;
+  messages: Message[];
+  modelType: string;
+  model: string;
+}
+
+export type ModelType = "groq" | "openrouter" | "perplexity";
+
+export default function useConversation(initialChatId: string | undefined = undefined) {
+  const [currentChatId, setCurrentChatId] = useState<string | null>(initialChatId || null);
+  const [currentSession, setCurrentSession] = useState<Message[]>([]);
+  const [selectedModelType, setSelectedModelType] = useState<ModelType>("groq");
+  const [selectedModel, setSelectedModel] = useState<string>(
     "meta-llama/llama-4-maverick-17b-128e-instruct"
   );
-  const [loading, setLoading] = useState(false);
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [streamingResponse, setStreamingResponse] = useState("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [isStreaming, setIsStreaming] = useState<boolean>(false);
+  const [streamingResponse, setStreamingResponse] = useState<string>("");
 
   useEffect(() => {
     if (initialChatId) {
@@ -26,17 +44,17 @@ export default function useConversation(initialChatId = null) {
     }
   }, [initialChatId]);
 
-  const loadChat = (chatId) => {
+  const loadChat = (chatId: string): void => {
     const chat = getChatById(chatId);
     if (chat) {
       setCurrentChatId(chatId);
       setCurrentSession(chat.messages || []);
-      setSelectedModelType(chat.modelType || "groq");
+      setSelectedModelType((chat.modelType as ModelType) || "groq");
       setSelectedModel(chat.model || "meta-llama/llama-4-maverick-17b-128e-instruct");
     }
   };
 
-  const startNewChat = () => {
+  const startNewChat = (): void => {
     setCurrentChatId(null);
     setCurrentSession([]);
     setSelectedModelType("groq");
@@ -54,8 +72,8 @@ export default function useConversation(initialChatId = null) {
     }
   }, [selectedModelType]);
 
-  const onAsk = async (input) => {
-    const newUserMessage = {
+  const onAsk = async (input: string): Promise<void> => {
+    const newUserMessage: Message = {
       who: "user",
       quesAns: input,
       time: new Date().toLocaleString(),
@@ -65,7 +83,7 @@ export default function useConversation(initialChatId = null) {
   };
 
   // Helper function to check if a model is a reasoning model
-  const isReasoningModel = (modelType, modelId) => {
+  const isReasoningModel = (modelType: ModelType, modelId: string): boolean => {
     const reasoningModels = [
       'deepseek/deepseek-r1',
       'deepseek/deepseek-r1:free',
@@ -75,14 +93,14 @@ export default function useConversation(initialChatId = null) {
     return reasoningModels.some(model => modelId.includes(model) || modelId === model);
   };
 
-  const getAiAnswer = async (input, newUserMessage) => {
+  const getAiAnswer = async (input: string, newUserMessage: Message): Promise<void> => {
     setLoading(true);
     setIsStreaming(true);
     setStreamingResponse("");
     let fullResponse = "";
 
     // Convert currentSession to proper messages format
-    const messages = [];
+    const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
     
     // Add all previous messages from the session
     currentSession.forEach((item) => {
@@ -127,11 +145,15 @@ export default function useConversation(initialChatId = null) {
 
       if (shouldStream) {
         // Handle streaming responses
-        const reader = response.body.getReader();
+        const reader = response.body?.getReader();
+        if (!reader) {
+          throw new Error("Unable to read response stream");
+        }
+        
         const decoder = new TextDecoder();
         let buffer = "";
 
-        const processStream = async () => {
+        const processStream = async (): Promise<void> => {
           while (true) {
             const { value, done } = await reader.read();
             if (done) break;
@@ -168,7 +190,7 @@ export default function useConversation(initialChatId = null) {
         fullResponse = data.choices[0].message.content;
       }
 
-      const aiMessage = {
+      const aiMessage: Message = {
         who: "Soul AI",
         quesAns: fullResponse,
         time: new Date().toLocaleString(),
@@ -189,8 +211,8 @@ export default function useConversation(initialChatId = null) {
     }
   };
 
-  const autoSave = async (updatedSession) => {
-    if (updatedSession.length === 0) return;
+  const autoSave = async (updatedSession: Message[]): Promise<string | null> => {
+    if (updatedSession.length === 0) return null;
 
     let chatId = currentChatId;
     let title = "";
@@ -201,7 +223,7 @@ export default function useConversation(initialChatId = null) {
       title = generateChatTitle(updatedSession[0]?.quesAns);
     }
 
-    const chatData = {
+    const chatData: Chat = {
       id: chatId,
       title: title || generateChatTitle(updatedSession[0]?.quesAns),
       messages: updatedSession,
@@ -216,13 +238,13 @@ export default function useConversation(initialChatId = null) {
     return chatId;
   };
 
-  const onSave = async () => {
+  const onSave = async (): Promise<string | null> => {
     const chatId = await autoSave(currentSession);
     console.log("Chat manually saved:", chatId);
     return chatId;
   };
 
-  const updateRatingFeedback = (time, rating, feedback) => {
+  const updateRatingFeedback = (time: string, rating: number, feedback: string): void => {
     setCurrentSession((prev) => {
       const index = prev.findIndex((item) => item.time === time);
       if (index !== -1) {

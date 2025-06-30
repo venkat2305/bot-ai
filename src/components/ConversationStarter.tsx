@@ -2,7 +2,17 @@ import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
 import clsx from "clsx";
 
-function ConversationStarter({ question, subtext, onAsk }) {
+interface ConversationStarterProps {
+  question: string;
+  subtext?: string;
+  onAsk: (question: string) => void;
+}
+
+function ConversationStarter({ question, subtext, onAsk }: ConversationStarterProps) {
+  const handleClick = (): void => {
+    onAsk(question);
+  };
+
   return (
     <motion.div
       whileHover={{ 
@@ -16,7 +26,7 @@ function ConversationStarter({ question, subtext, onAsk }) {
         "hover:border-[var(--primary-color)] hover:shadow-lg"
       )}
       style={{ boxShadow: "var(--shadow)" }}
-      onClick={() => onAsk(question)}
+      onClick={handleClick}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1">

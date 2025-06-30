@@ -5,7 +5,13 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import clsx from "clsx";
 
-function parseThink(text) {
+interface ThinkResult {
+  reasoning: string;
+  answer: string;
+  inProgress: boolean;
+}
+
+function parseThink(text: string): ThinkResult {
   const start = text.indexOf("<think>");
   const end = text.indexOf("</think>");
   let reasoning = "";
@@ -28,13 +34,19 @@ function parseThink(text) {
   return { reasoning, answer, inProgress };
 }
 
-function ConversationComp({ who, quesAns, time }) {
+interface ConversationCompProps {
+  who: string;
+  quesAns: string;
+  time: string;
+}
+
+function ConversationComp({ who, quesAns, time }: ConversationCompProps) {
   const { reasoning, answer, inProgress } = parseThink(quesAns);
-  const [open, setOpen] = useState(inProgress); // Auto-open when reasoning is in progress
-  const [copied, setCopied] = useState(false);
+  const [open, setOpen] = useState<boolean>(inProgress); // Auto-open when reasoning is in progress
+  const [copied, setCopied] = useState<boolean>(false);
   const isUser = who === "user";
 
-  const handleCopy = (text) => {
+  const handleCopy = (text: string): void => {
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => {

@@ -3,22 +3,41 @@ import { motion } from "framer-motion";
 import { Send, Paperclip } from "lucide-react";
 import clsx from "clsx";
 
-function InputBar({ inputText, setInputText, onAsk }) {
-  const [isFocused, setIsFocused] = useState(false);
-  const textareaRef = useRef(null);
+interface InputBarProps {
+  inputText: string;
+  setInputText: (text: string) => void;
+  onAsk: (question: string) => void;
+  onSave?: () => void;
+}
 
-  const handleSubmit = () => {
+function InputBar({ inputText, setInputText, onAsk }: InputBarProps) {
+  const [isFocused, setIsFocused] = useState<boolean>(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleSubmit = (): void => {
     if (inputText.trim() !== "") {
       onAsk(inputText);
       setInputText("");
     }
   };
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSubmit();
     }
+  };
+
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
+    setInputText(e.target.value);
+  };
+
+  const handleFocus = (): void => {
+    setIsFocused(true);
+  };
+
+  const handleBlur = (): void => {
+    setIsFocused(false);
   };
 
   useEffect(() => {
@@ -50,10 +69,10 @@ function InputBar({ inputText, setInputText, onAsk }) {
             )}
             placeholder="Type your message here..."
             value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
+            onChange={handleTextareaChange}
             onKeyDown={handleKeyDown}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
             rows={1}
           />
           

@@ -13,6 +13,22 @@ import {
 import clsx from "clsx";
 import { getRecentChats, deleteChat } from "../utils/localStorageUtils";
 
+interface Chat {
+  id: string;
+  title: string;
+  updatedAt: string;
+}
+
+interface SideBarProps {
+  onNewChat: () => void;
+  onToggleTheme: () => void;
+  themeMode: "light" | "dark";
+  collapsed: boolean;
+  onToggleCollapse: () => void;
+  onChatSelect: (chat: Chat) => void;
+  currentChatId?: string;
+}
+
 function SideBar({ 
   onNewChat, 
   onToggleTheme, 
@@ -21,8 +37,8 @@ function SideBar({
   onToggleCollapse,
   onChatSelect,
   currentChatId
-}) {
-  const [recentChats, setRecentChats] = useState([]);
+}: SideBarProps) {
+  const [recentChats, setRecentChats] = useState<Chat[]>([]);
 
   useEffect(() => {
     loadRecentChats();
@@ -32,20 +48,20 @@ function SideBar({
     return () => clearInterval(interval);
   }, []);
 
-  const loadRecentChats = () => {
+  const loadRecentChats = (): void => {
     const chats = getRecentChats(15);
     setRecentChats(chats);
   };
 
-  const handleNewChatClick = () => {
+  const handleNewChatClick = (): void => {
     onNewChat();
   };
 
-  const handleChatSelect = (chat) => {
+  const handleChatSelect = (chat: Chat): void => {
     onChatSelect(chat);
   };
 
-  const handleDeleteChat = (e, chatId) => {
+  const handleDeleteChat = (e: React.MouseEvent, chatId: string): void => {
     e.stopPropagation();
     deleteChat(chatId);
     loadRecentChats();
@@ -54,10 +70,10 @@ function SideBar({
     }
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffTime = Math.abs(now - date);
+    const diffTime = Math.abs(now.getTime() - date.getTime());
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     
     if (diffDays === 0) {

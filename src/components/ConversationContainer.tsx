@@ -7,12 +7,33 @@ import ConversationComp from "../components/ConversationComp";
 import ConversationStarter from "../components/ConversationStarter";
 import siteIcon from "../assets/site-icon.png";
 import sampleData from "../assets/sampleData.json";
-import useConversation from "../hooks/useConversation";
+import useConversation, { ModelType } from "../hooks/useConversation";
 import useOpenRouterModels from "../hooks/useOpenRouterModels";
 import useGroqModels from "../hooks/useGroqModels";
 import clsx from "clsx";
 
-function ConversationContainer({ chatId }) {
+interface ConversationContainerProps {
+  chatId?: string;
+}
+
+interface ConversationStarter {
+  question: string;
+  subtext: string;
+}
+
+interface SelectOption {
+  value: string;
+  label: string;
+}
+
+interface CustomSelectProps {
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  options: SelectOption[];
+  placeholder: string;
+}
+
+function ConversationContainer({ chatId }: ConversationContainerProps) {
   const {
     currentSession,
     isStreaming,
@@ -28,12 +49,12 @@ function ConversationContainer({ chatId }) {
 
   const { openRouterModels } = useOpenRouterModels();
   const { groqModels } = useGroqModels();
-  const perplexityModels = ["r1-1776"];
-  const [conversationStarters, setConversationStarters] = React.useState([]);
+  const perplexityModels: string[] = ["r1-1776"];
+  const [conversationStarters, setConversationStarters] = React.useState<ConversationStarter[]>([]);
 
   React.useEffect(() => {
-    const starters = [];
-    const usedIndices = new Set();
+    const starters: ConversationStarter[] = [];
+    const usedIndices = new Set<number>();
     const numStarters = Math.min(4, sampleData.length);
 
     while (starters.length < numStarters) {
@@ -49,9 +70,9 @@ function ConversationContainer({ chatId }) {
     setConversationStarters(starters);
   }, []);
 
-  const [inputText, setInputText] = React.useState("");
+  const [inputText, setInputText] = React.useState<string>("");
 
-  const CustomSelect = ({ value, onChange, options, placeholder }) => (
+  const CustomSelect: React.FC<CustomSelectProps> = ({ value, onChange, options, placeholder }) => (
     <div className="relative">
       <select
         className={clsx(
@@ -78,13 +99,13 @@ function ConversationContainer({ chatId }) {
     </div>
   );
 
-  const modelTypeOptions = [
+  const modelTypeOptions: SelectOption[] = [
     { value: "groq", label: "Groq Models" },
     { value: "openrouter", label: "OpenRouter Models" },
     { value: "perplexity", label: "Perplexity" }
   ];
 
-  const getModelOptions = () => {
+  const getModelOptions = (): SelectOption[] => {
     switch (selectedModelType) {
       case "groq":
         return groqModels.map(model => ({ value: model.id, label: model.id }));
@@ -122,7 +143,7 @@ function ConversationContainer({ chatId }) {
         <div className="flex gap-3">
           <CustomSelect
             value={selectedModelType}
-            onChange={(e) => setSelectedModelType(e.target.value)}
+            onChange={(e) => setSelectedModelType(e.target.value as ModelType)}
             options={modelTypeOptions}
             placeholder="Select Model Type"
           />
@@ -248,7 +269,7 @@ function ConversationContainer({ chatId }) {
           <InputBar
             inputText={inputText}
             setInputText={setInputText}
-            onAsk={(question) => onAsk(question)}
+            onAsk={(question: string) => onAsk(question)}
             onSave={onSave}
           />
         </div>

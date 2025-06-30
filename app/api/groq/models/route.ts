@@ -3,7 +3,8 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   const GROQ_API_KEY = process.env.GROQ_API_KEY;
-    console.log("in groq route")
+  console.log("in groq route")
+  
   if (!GROQ_API_KEY) {
     return NextResponse.json({ error: 'Groq API key not configured' }, { status: 500 });
   }
@@ -21,4 +22,4 @@ export async function GET() {
     console.error('Error fetching Groq models:', error);
     return NextResponse.json({ error: 'Failed to fetch Groq models' }, { status: 500 });
   }
-} 
+}

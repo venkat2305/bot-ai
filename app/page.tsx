@@ -5,17 +5,22 @@ import { motion, AnimatePresence } from "framer-motion";
 import SideBar from "../src/components/SideBar";
 import ConversationContainer from "../src/components/ConversationContainer";
 
-export default function Home() {
-  const [themeMode, setThemeMode] = useState("light");
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [currentChatId, setCurrentChatId] = useState(null);
-  const [conversationKey, setConversationKey] = useState(Date.now());
+interface Chat {
+  id: string;
+  title: string;
+}
 
-  const toggleTheme = () => {
+export default function Home() {
+  const [themeMode, setThemeMode] = useState<"light" | "dark">("light");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
+  const [currentChatId, setCurrentChatId] = useState<string | undefined>(undefined);
+  const [conversationKey, setConversationKey] = useState<number>(Date.now());
+
+  const toggleTheme = (): void => {
     setThemeMode((prev) => (prev === "light" ? "dark" : "light"));
   };
 
-  const toggleSidebar = () => {
+  const toggleSidebar = (): void => {
     setSidebarCollapsed((prev) => !prev);
   };
 
@@ -23,12 +28,12 @@ export default function Home() {
     document.body.dataset.theme = themeMode;
   }, [themeMode]);
   
-  const handleNewChat = () => {
-    setCurrentChatId(null);
+  const handleNewChat = (): void => {
+    setCurrentChatId(undefined);
     setConversationKey(Date.now());
   };
 
-  const handleChatSelect = (chat) => {
+  const handleChatSelect = (chat: Chat): void => {
     setCurrentChatId(chat.id);
     setConversationKey(Date.now());
   };
@@ -73,4 +78,4 @@ export default function Home() {
       </div>
     </div>
   );
-} 
+}
