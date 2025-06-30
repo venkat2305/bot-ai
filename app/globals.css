@@ -23,19 +23,19 @@ body[data-theme='light'] {
 }
 
 body[data-theme='dark'] {
-  --bg-body: #0f172a;
-  --bg-secondary: #1e293b;
-  --bg-tertiary: #334155;
-  --text-color: #f8fafc;
-  --text-secondary: #cbd5e1;
-  --text-muted: #64748b;
-  --primary-color: #818cf8;
-  --primary-hover: #6366f1;
-  --card-bg: #1e293b;
-  --border-color: #334155;
-  --bubble-bg: #334155;
-  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+  --bg-body: #0a0b0f;
+  --bg-secondary: #13151a;
+  --bg-tertiary: #1a1d23;
+  --text-color: #f1f3f5;
+  --text-secondary: #c1c8cd;
+  --text-muted: #8b949e;
+  --primary-color: #7c3aed;
+  --primary-hover: #8b5cf6;
+  --card-bg: #16181d;
+  --border-color: #21262d;
+  --bubble-bg: #1c1f26;
+  --shadow: 0 2px 8px 0 rgb(0 0 0 / 0.3), 0 1px 3px -1px rgb(0 0 0 / 0.2);
+  --shadow-lg: 0 16px 24px -4px rgb(0 0 0 / 0.25), 0 8px 12px -6px rgb(0 0 0 / 0.15);
 }
 
 body {
@@ -57,7 +57,8 @@ body {
 }
 
 body[data-theme='dark'] .glass-effect {
-  background: rgba(30, 41, 59, 0.8);
+  background: rgba(22, 24, 29, 0.85);
+  border: 1px solid rgba(33, 38, 45, 0.5);
 }
 
 .gradient-border {
