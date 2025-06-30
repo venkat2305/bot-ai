@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronUp, Brain, User, Bot } from "lucide-react";
+import { ChevronDown, ChevronUp, Brain, User, Bot, ClipboardCopy } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import clsx from "clsx";
@@ -31,7 +31,16 @@ function parseThink(text) {
 function ConversationComp({ who, quesAns, time }) {
   const { reasoning, answer, inProgress } = parseThink(quesAns);
   const [open, setOpen] = useState(inProgress); // Auto-open when reasoning is in progress
+  const [copied, setCopied] = useState(false);
   const isUser = who === "user";
+
+  const handleCopy = (text) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => {
+      setCopied(false);
+    }, 3000);
+  };
 
   return (
     <motion.div
@@ -138,6 +147,12 @@ function ConversationComp({ who, quesAns, time }) {
               "prose-blockquote:text-[var(--text-secondary)]"
             )}>
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{answer}</ReactMarkdown>
+              <button
+                onClick={() => handleCopy(answer)}
+                className="mt-2 text-xs text-[var(--text-secondary)] hover:text-[var(--primary-color)] flex items-center gap-1"
+              >
+                {copied ? "Copied!" : <ClipboardCopy className="w-3 h-3" />} {copied ? "" : "Copy"}
+              </button>
             </div>
           )}
         </div>
