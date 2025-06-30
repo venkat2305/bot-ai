@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { PlusCircledIcon, MinusCircledIcon } from "@radix-ui/react-icons";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronDown, ChevronUp, Brain, User, Bot } from "lucide-react";
 import userIcon from "../assets/user-icon.png";
 import siteIcon from "../assets/site-icon.png";
 import { useLocation } from "react-router";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import clsx from "clsx";
 
 function parseThink(text) {
   const start = text.indexOf("<think>");
@@ -31,62 +33,108 @@ function ConversationComp({ who, quesAns, time }) {
   const location = useLocation();
   const past = location.pathname === "/past-coversation";
   const { reasoning, answer } = parseThink(quesAns);
-  const style = past
-    ? ""
-    : "bg-[var(--bubble-bg)] rounded shadow p-3 my-1";
   const [open, setOpen] = useState(false);
+  const isUser = who === "user";
 
   return (
-    <div className={`flex gap-3 ${style}`}>
-      <div className="w-20 shrink-0">
-        <img src={who === "user" ? userIcon : siteIcon} alt="icon" />
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={clsx(
+        "flex gap-4",
+        isUser ? "flex-row-reverse" : "flex-row"
+      )}
+    >
+      <div className="flex-shrink-0">
+        <div className={clsx(
+          "w-10 h-10 rounded-full p-2 shadow-sm border",
+          isUser 
+            ? "bg-gradient-to-br from-blue-500 to-purple-600 border-blue-200" 
+            : "bg-gradient-to-br from-[var(--primary-color)] to-[var(--primary-hover)] border-[var(--border-color)]"
+        )}>
+          {isUser ? (
+            <User className="w-full h-full text-white" />
+          ) : (
+            <Bot className="w-full h-full text-white" />
+          )}
+        </div>
       </div>
-      <div className="flex flex-col gap-1 text-sm">
-        <strong className="text-base">{who}</strong>
-        {reasoning && (
-          <div>
-            <button
-              className="flex items-center gap-1 text-xs text-gray-800 dark:text-gray-300"
-              onClick={() => setOpen((p) => !p)}
-            >
-              {open ? <MinusCircledIcon /> : <PlusCircledIcon />}
-              <svg
-                className="w-3 h-3 animate-spin ml-1 text-purple-600"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
+
+      <div className={clsx(
+        "flex-1 max-w-[85%] space-y-2",
+        isUser ? "text-right" : "text-left"
+      )}>
+        <div className="flex items-center gap-2 text-xs" style={{ color: "var(--text-secondary)" }}>
+          <span className="font-medium">
+            {isUser ? "You" : "AI Assistant"}
+          </span>
+          <span>•</span>
+          <span>{time.split(",")[1]?.trim() || time}</span>
+        </div>
+
+        <div className={clsx(
+          "inline-block max-w-full p-4 rounded-2xl shadow-sm border",
+          "bg-[var(--card-bg)] border-[var(--border-color)]",
+          isUser 
+            ? "rounded-br-sm bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20" 
+            : "rounded-bl-sm"
+        )}>
+          {reasoning && (
+            <div className="mb-3">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className={clsx(
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200",
+                  "bg-[var(--bg-tertiary)] hover:bg-[var(--bubble-bg)] border border-[var(--border-color)]"
+                )}
+                onClick={() => setOpen((p) => !p)}
+                style={{ color: "var(--text-secondary)" }}
               >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4l-3 3-3-3h4z"
-                />
-              </svg>
-              Thinking
-            </button>
-            {open && (
-              <div className="mt-1 text-xs text-gray-800 dark:text-gray-200">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{reasoning}</ReactMarkdown>
-              </div>
-            )}
-          </div>
-        )}
-        {answer && (
-          <div className="prose prose-sm dark:prose-invert">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{answer}</ReactMarkdown>
-          </div>
-        )}
-        <span className="text-xs text-gray-500">{time.split(",")[1]}</span>
+                <Brain className="w-4 h-4" />
+                <span>AI Reasoning</span>
+                {open ? (
+                  <ChevronUp className="w-4 h-4" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" />
+                )}
+              </motion.button>
+              <AnimatePresence>
+                {open && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="mt-3 p-3 rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border-color)]"
+                  >
+                    <div className="prose prose-sm max-w-none text-xs" style={{ color: "var(--text-secondary)" }}>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{reasoning}</ReactMarkdown>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
+          {answer && (
+            <div className={clsx(
+              "prose prose-sm max-w-none",
+              "prose-headings:text-[var(--text-color)]",
+              "prose-p:text-[var(--text-color)]",
+              "prose-strong:text-[var(--text-color)]",
+              "prose-code:text-[var(--primary-color)]",
+              "prose-pre:bg-[var(--bg-tertiary)]",
+              "prose-pre:border prose-pre:border-[var(--border-color)]",
+              "prose-blockquote:border-[var(--primary-color)]",
+              "prose-blockquote:text-[var(--text-secondary)]"
+            )}>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{answer}</ReactMarkdown>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
