@@ -17,9 +17,11 @@ function parseThink(text) {
 
   if (start !== -1) {
     if (end !== -1 && end > start) {
+      // Complete reasoning block found
       reasoning = text.slice(start + 7, end);
       answer = (text.slice(0, start) + text.slice(end + 8)).trim();
     } else {
+      // Incomplete reasoning block (streaming in progress)
       reasoning = text.slice(start + 7);
       answer = text.slice(0, start).trim();
       inProgress = true;
@@ -32,8 +34,8 @@ function parseThink(text) {
 function ConversationComp({ who, quesAns, time }) {
   const location = useLocation();
   const past = location.pathname === "/past-coversation";
-  const { reasoning, answer } = parseThink(quesAns);
-  const [open, setOpen] = useState(false);
+  const { reasoning, answer, inProgress } = parseThink(quesAns);
+  const [open, setOpen] = useState(inProgress); // Auto-open when reasoning is in progress
   const isUser = who === "user";
 
   return (
@@ -93,6 +95,9 @@ function ConversationComp({ who, quesAns, time }) {
               >
                 <Brain className="w-4 h-4" />
                 <span>AI Reasoning</span>
+                {inProgress && (
+                  <div className="w-2 h-2 bg-[var(--primary-color)] rounded-full animate-pulse" />
+                )}
                 {open ? (
                   <ChevronUp className="w-4 h-4" />
                 ) : (
@@ -110,6 +115,14 @@ function ConversationComp({ who, quesAns, time }) {
                   >
                     <div className="prose prose-sm max-w-none text-xs" style={{ color: "var(--text-secondary)" }}>
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>{reasoning}</ReactMarkdown>
+                      {inProgress && (
+                        <div className="flex items-center gap-2 mt-2 text-xs" style={{ color: "var(--text-muted)" }}>
+                          <div className="w-1 h-1 bg-current rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                          <div className="w-1 h-1 bg-current rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                          <div className="w-1 h-1 bg-current rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                          <span>Reasoning in progress...</span>
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 )}

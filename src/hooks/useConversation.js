@@ -43,6 +43,17 @@ export default function useConversation() {
     await getAiAnswer(input);
   };
 
+  // Helper function to check if a model is a reasoning model
+  const isReasoningModel = (modelType, modelId) => {
+    const reasoningModels = [
+      'deepseek/deepseek-r1',
+      'deepseek/deepseek-r1:free',
+      'r1-1776',
+      'meta-llama/llama-4-maverick-17b-128e-instruct'
+    ];
+    return reasoningModels.some(model => modelId.includes(model) || modelId === model);
+  };
+
   const getAiAnswer = async (input) => {
     setLoading(true);
     setIsStreaming(true);
@@ -77,11 +88,45 @@ export default function useConversation() {
             body: JSON.stringify({
               model: selectedModel,
               messages: messages,
+              stream: isReasoningModel(selectedModelType, selectedModel),
             }),
           }
         );
-        const data = await response.json();
-        fullResponse = data.choices[0].message.content;
+
+        if (isReasoningModel(selectedModelType, selectedModel)) {
+          // Handle streaming for reasoning models
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value);
+            const lines = chunk.split("\n").filter((line) => line.trim() !== "");
+
+            for (const line of lines) {
+              if (line.startsWith("data: ")) {
+                const data = line.slice(6);
+                if (data === "[DONE]") continue;
+
+                try {
+                  const parsed = JSON.parse(data);
+                  const content = parsed.choices[0]?.delta?.content || "";
+                  fullResponse += content;
+                  setStreamingResponse((prev) => prev + content);
+                } catch (e) {
+                  console.error("Error parsing JSON:", e);
+                }
+              }
+            }
+          }
+        } else {
+          // Handle non-streaming for non-reasoning models
+          const data = await response.json();
+          fullResponse = data.choices[0].message.content;
+        }
+
         setCurrentSession((prev) => [
           ...prev,
           {
@@ -93,6 +138,7 @@ export default function useConversation() {
           },
         ]);
         setIsStreaming(false);
+        setStreamingResponse("");
       } else if (selectedModelType === "groq") {
         const groqAPI = new OpenAI({
           apiKey: REACT_APP_GROQ_API_KEY,
