@@ -49,11 +49,20 @@ export default function useConversation() {
     setStreamingResponse("");
     let fullResponse = "";
 
-    const fullContext = currentSession
-      .map(
-        (item) => `user question or AI response: ${item.who} => ${item.quesAns}`
-      )
-      .join("\n") + `\nNew question: ${input}`;
+    // Convert currentSession to proper messages format
+    const messages = [];
+    
+    // Add all previous messages from the session
+    currentSession.forEach((item) => {
+      if (item.who === "user") {
+        messages.push({ role: "user", content: item.quesAns });
+      } else {
+        messages.push({ role: "assistant", content: item.quesAns });
+      }
+    });
+    
+    // Add the new user message
+    messages.push({ role: "user", content: input });
 
     try {
       if (selectedModelType === "perplexity") {
@@ -67,7 +76,7 @@ export default function useConversation() {
             },
             body: JSON.stringify({
               model: selectedModel,
-              messages: [{ role: "user", content: fullContext }],
+              messages: messages,
             }),
           }
         );
@@ -92,7 +101,7 @@ export default function useConversation() {
         });
         const stream = await groqAPI.chat.completions.create({
           model: selectedModel,
-          messages: [{ role: "user", content: fullContext }],
+          messages: messages,
           stream: true,
         });
 
@@ -124,7 +133,7 @@ export default function useConversation() {
           },
           body: JSON.stringify({
             model: selectedModel,
-            messages: [{ role: "user", content: fullContext }],
+            messages: messages,
             stream: true,
           }),
         });
