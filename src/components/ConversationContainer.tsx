@@ -74,6 +74,9 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
   const handleSend = async (question: string) => {
     const result = await sendMessage(question);
     if (result?.newChatId) {
+      if (result.messages) {
+        sessionStorage.setItem(`messages_${result.newChatId}`, JSON.stringify(result.messages));
+      }
       router.replace(`/chat/${result.newChatId}`);
     }
   };

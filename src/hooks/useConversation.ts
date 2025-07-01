@@ -22,6 +22,20 @@ export default function useConversation(chatId: string | undefined) {
         previousChatIdRef.current = chatId;
         return;
       }
+
+      // Check for messages persisted in sessionStorage when navigating from a new chat
+      const stored = sessionStorage.getItem(`messages_${chatId}`);
+      if (stored) {
+        try {
+          const parsed: Message[] = JSON.parse(stored);
+          setMessages(parsed);
+          sessionStorage.removeItem(`messages_${chatId}`);
+          previousChatIdRef.current = chatId;
+          return;
+        } catch (e) {
+          console.error('Failed to parse stored messages', e);
+        }
+      }
       
       // Don't fetch if we're transitioning from 'new' to a real chat ID (same conversation)
       if (previousChatIdRef.current === 'new' && messages.length > 0) {
@@ -66,14 +80,16 @@ export default function useConversation(chatId: string | undefined) {
   }, [selectedModelType]);
 
   const sendMessage = useCallback(
-    async (input: string) => {
+    async (input: string): Promise<{ newChatId: string | null; messages: Message[] } | void> => {
       let currentChatId = chatId;
       let newChatId: string | null = null;
+      let updatedMessages = [...messages];
 
       if (!input.trim()) return;
 
       const userMessage: Message = { role: 'user', content: input };
-      setMessages((prevMessages) => [...prevMessages, userMessage]);
+      updatedMessages = [...updatedMessages, userMessage];
+      setMessages(updatedMessages);
       setLoading(true);
 
       try {
@@ -103,8 +119,7 @@ export default function useConversation(chatId: string | undefined) {
         });
 
         const allMessages = [
-          ...messages,
-          userMessage
+          ...updatedMessages
         ]
 
         let apiEndpoint = '';
@@ -136,7 +151,8 @@ export default function useConversation(chatId: string | undefined) {
           content: aiMessageContent,
         };
 
-        setMessages((prevMessages) => [...prevMessages, aiMessage]);
+        updatedMessages = [...updatedMessages, aiMessage];
+        setMessages(updatedMessages);
 
         await fetch(`/api/chat/${currentChatId}/messages`, {
           method: 'POST',
@@ -144,14 +160,15 @@ export default function useConversation(chatId: string | undefined) {
           body: JSON.stringify(aiMessage),
         });
 
-        return { newChatId };
+        return { newChatId, messages: updatedMessages };
       } catch (error) {
         console.error('Error sending message:', error);
         const errorMessage: Message = {
           role: 'assistant',
           content: 'Sorry, I encountered an error. Please try again.',
         };
-        setMessages((prevMessages) => [...prevMessages, errorMessage]);
+        updatedMessages = [...updatedMessages, errorMessage];
+        setMessages(updatedMessages);
       } finally {
         setLoading(false);
       }
