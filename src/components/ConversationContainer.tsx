@@ -11,6 +11,7 @@ import useConversation, { ModelType } from "../hooks/useConversation";
 import useOpenRouterModels from "../hooks/useOpenRouterModels";
 import useGroqModels from "../hooks/useGroqModels";
 import clsx from "clsx";
+import { useRouter } from 'next/navigation';
 
 interface ConversationContainerProps {
   chatId?: string;
@@ -35,17 +36,15 @@ interface CustomSelectProps {
 
 function ConversationContainer({ chatId }: ConversationContainerProps) {
   const {
-    currentSession,
-    isStreaming,
-    streamingResponse,
+    messages,
     loading,
     selectedModelType,
     setSelectedModelType,
     selectedModel,
     setSelectedModel,
-    onAsk,
-    onSave,
+    sendMessage,
   } = useConversation(chatId);
+  const router = useRouter();
 
   const { openRouterModels } = useOpenRouterModels();
   const { groqModels } = useGroqModels();
@@ -71,6 +70,13 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
   }, []);
 
   const [inputText, setInputText] = React.useState<string>("");
+
+  const handleSend = async (question: string) => {
+    const result = await sendMessage(question);
+    if (result?.newChatId) {
+      router.replace(`/chat/${result.newChatId}`);
+    }
+  };
 
   const CustomSelect: React.FC<CustomSelectProps> = ({ value, onChange, options, placeholder }) => (
     <div className="relative">
@@ -158,7 +164,7 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <AnimatePresence mode="wait">
-          {currentSession.length ? (
+          {messages.length ? (
             <motion.div
               key="conversation"
               initial={{ opacity: 0 }}
@@ -166,32 +172,19 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
               exit={{ opacity: 0 }}
               className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin"
             >
-              {currentSession.map((item, index) => (
+              {messages.map((item, index) => (
                 <motion.div
-                  key={item.time}
+                  key={item._id || index}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                 >
                   <ConversationComp
-                    who={item.who}
-                    quesAns={item.quesAns}
-                    time={item.time}
+                    role={item.role}
+                    content={item.content}
                   />
                 </motion.div>
               ))}
-              {isStreaming && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
-                  <ConversationComp
-                    who="Soul AI"
-                    quesAns={streamingResponse}
-                    time={new Date().toLocaleString()}
-                  />
-                </motion.div>
-              )}
             </motion.div>
           ) : (
             <motion.div
@@ -243,7 +236,7 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
         )}
 
         <div className="p-6 border-t" style={{ borderColor: "var(--border-color)" }}>
-          {currentSession.length === 0 && (
+          {messages.length === 0 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -260,7 +253,7 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
                   <ConversationStarter
                     question={item.question}
                     subtext={item.subtext}
-                    onAsk={onAsk}
+                    onAsk={handleSend}
                   />
                 </motion.div>
               ))}
@@ -269,8 +262,7 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
           <InputBar
             inputText={inputText}
             setInputText={setInputText}
-            onAsk={(question: string) => onAsk(question)}
-            onSave={onSave}
+            onAsk={handleSend}
           />
         </div>
       </div>
