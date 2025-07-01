@@ -8,10 +8,14 @@ import {
   Menu,
   Sparkles,
   Trash2,
-  Clock
+  Clock,
+  LogIn,
+  LogOut,
+  User,
 } from "lucide-react";
 import clsx from "clsx";
 import { getRecentChats, deleteChat } from "../utils/localStorageUtils";
+import { useSession, signIn, signOut } from "next-auth/react";
 
 interface Chat {
   id: string;
@@ -27,6 +31,72 @@ interface SideBarProps {
   onToggleCollapse: () => void;
   onChatSelect: (chat: Chat) => void;
   currentChatId?: string;
+}
+
+function UserAuth({ collapsed }: { collapsed: boolean }) {
+  const { data: session } = useSession();
+
+  if (session) {
+    return (
+      <div className="flex items-center gap-3 p-3 rounded-xl transition-all duration-200 w-full bg-[var(--bg-tertiary)] hover:bg-[var(--bubble-bg)] border border-[var(--border-color)]">
+        {session.user?.image ? (
+          <img
+            src={session.user.image}
+            alt={session.user.name || "User"}
+            className="w-8 h-8 rounded-full"
+          />
+        ) : (
+          <User className="w-8 h-8 rounded-full bg-gray-300 p-1" />
+        )}
+        {!collapsed && (
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate" style={{ color: "var(--text-color)" }}>
+              {session.user?.name}
+            </p>
+            <p className="text-xs truncate mt-1" style={{ color: "var(--text-muted)" }}>
+              {session.user?.email}
+            </p>
+          </div>
+        )}
+        <motion.button
+          onClick={() => signOut()}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          className="p-2 rounded-lg transition-all duration-200 hover:bg-red-100 dark:hover:bg-red-900/20"
+          title="Sign Out"
+        >
+          <LogOut className="w-5 h-5 text-red-500" />
+        </motion.button>
+      </div>
+    );
+  }
+
+  return (
+    <motion.button
+      onClick={() => signIn("google")}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      className={clsx(
+        "flex items-center gap-3 p-3 rounded-xl transition-all duration-200 w-full",
+        "bg-[var(--bg-tertiary)] hover:bg-[var(--bubble-bg)] border border-[var(--border-color)]",
+        collapsed && "justify-center"
+      )}
+      title={collapsed ? "Sign In" : undefined}
+    >
+      <LogIn className="w-5 h-5 flex-shrink-0" />
+      {!collapsed && (
+        <motion.span
+          initial={{ opacity: 0, width: 0 }}
+          animate={{ opacity: 1, width: "auto" }}
+          exit={{ opacity: 0, width: 0 }}
+          className="text-sm font-medium whitespace-nowrap overflow-hidden"
+          style={{ color: "var(--text-color)" }}
+        >
+          Sign In with Google
+        </motion.span>
+      )}
+    </motion.button>
+  );
 }
 
 function SideBar({ 
@@ -220,7 +290,8 @@ function SideBar({
         </div>
       )}
 
-      <div className="mt-auto">
+      <div className="mt-auto flex flex-col gap-2">
+        <UserAuth collapsed={collapsed} />
         <motion.button
           onClick={onToggleTheme}
           whileHover={{ scale: 1.02 }}

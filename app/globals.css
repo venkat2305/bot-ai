@@ -10,9 +10,12 @@ body[data-theme='light'] {
   --bg-body: #ffffff;
   --bg-secondary: #f8fafc;
   --bg-tertiary: #f1f5f9;
-  --text-color: #0f172a;
-  --text-secondary: #64748b;
-  --text-muted: #94a3b8;
+  --text-color: #111827;
+  --text-secondary: #4b5563;
+  --text-muted: #6b7280;
+  --text-on-primary: #ffffff;
+  --text-on-secondary: #374151;
+  --text-on-tertiary: #1f2937;
   --primary-color: #6366f1;
   --primary-hover: #5048e5;
   --card-bg: #ffffff;
@@ -26,11 +29,14 @@ body[data-theme='dark'] {
   --bg-body: #0a0b0f;
   --bg-secondary: #13151a;
   --bg-tertiary: #1a1d23;
-  --text-color: #f1f3f5;
-  --text-secondary: #c1c8cd;
-  --text-muted: #8b949e;
-  --primary-color: #7c3aed;
-  --primary-hover: #8b5cf6;
+  --text-color: #f9fafb;
+  --text-secondary: #d1d5db;
+  --text-muted: #9ca3af;
+  --text-on-primary: #ffffff;
+  --text-on-secondary: #e5e7eb;
+  --text-on-tertiary: #f3f4f6;
+  --primary-color: #8b5cf6;
+  --primary-hover: #a78bfa;
   --card-bg: #16181d;
   --border-color: #21262d;
   --bubble-bg: #1c1f26;
@@ -101,13 +107,17 @@ body[data-theme='dark'] .glass-effect {
 }
 
 pre {
-  @apply bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 rounded-lg p-4 overflow-x-auto border;
+  background: var(--bg-tertiary);
+  color: var(--text-on-tertiary);
+  @apply rounded-lg p-4 overflow-x-auto border;
   border-color: var(--border-color);
   box-shadow: var(--shadow);
 }
 
 code {
-  @apply bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 rounded px-2 py-1 text-sm;
+  background: var(--bg-tertiary);
+  color: var(--text-on-tertiary);
+  @apply rounded px-2 py-1 text-sm;
   border: 1px solid var(--border-color);
 }
 
@@ -137,4 +147,33 @@ code {
   to {
     opacity: 1;
   }
+}
+
+/* Text contrast utilities */
+.text-on-primary {
+  color: var(--text-on-primary);
+}
+
+.text-on-secondary {
+  color: var(--text-on-secondary);
+}
+
+.text-on-tertiary {
+  color: var(--text-on-tertiary);
+}
+
+/* Enhanced text contrast for better readability */
+.text-high-contrast {
+  color: var(--text-color);
+  font-weight: 500;
+}
+
+.text-medium-contrast {
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.text-low-contrast {
+  color: var(--text-muted);
+  font-weight: 400;
 }
