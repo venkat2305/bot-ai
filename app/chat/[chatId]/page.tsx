@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import SideBar from "@/components/SideBar";
 import ConversationContainer from "@/components/ConversationContainer";
@@ -10,22 +10,23 @@ interface Chat {
   title: string;
 }
 
-export default function ChatPage({ params }: { params: { chatId: string } }) {
+export default function ChatPage({ params }: { params: Promise<{ chatId: string }> }) {
+  const resolvedParams = use(params);
   const [themeMode, setThemeMode] = useState<"light" | "dark">("light");
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
-  const [currentChatId, setCurrentChatId] = useState<string | undefined>(params.chatId);
+  const [currentChatId, setCurrentChatId] = useState<string | undefined>(resolvedParams.chatId);
   const [conversationKey, setConversationKey] = useState<number>(Date.now());
 
   useEffect(() => {
     const previousChatId = currentChatId;
-    setCurrentChatId(params.chatId);
+    setCurrentChatId(resolvedParams.chatId);
     
     // Only update conversationKey if we're switching to a different existing chat
     // Don't update when transitioning from 'new' to a real chat ID (same conversation)
-    if (previousChatId && previousChatId !== 'new' && params.chatId !== previousChatId) {
+    if (previousChatId && previousChatId !== 'new' && resolvedParams.chatId !== previousChatId) {
       setConversationKey(Date.now());
     }
-  }, [params.chatId, currentChatId]);
+  }, [resolvedParams.chatId, currentChatId]);
 
   const toggleTheme = (): void => {
     setThemeMode((prev) => (prev === "light" ? "dark" : "light"));
