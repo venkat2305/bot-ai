@@ -105,7 +105,7 @@ export default function useConversation(chatId: string | undefined) {
         const allMessages = [
           ...messages,
           userMessage
-        ]
+        ].map(({ role, content }) => ({ role, content }));
 
         let apiEndpoint = '';
         if (selectedModelType === 'perplexity') {
@@ -124,6 +124,7 @@ export default function useConversation(chatId: string | undefined) {
             messages: allMessages,
           }),
         });
+        console.log('aiResponse', aiResponse);
 
         if (!aiResponse.ok) {
           throw new Error(`AI API error! status: ${aiResponse.status}`);
