@@ -19,7 +19,6 @@ interface ConversationContainerProps {
 
 interface ConversationStarter {
   question: string;
-  subtext: string;
 }
 
 interface SelectOption {
@@ -61,7 +60,6 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
       if (!usedIndices.has(randNum)) {
         starters.push({
           question: sampleData[randNum].question,
-          subtext: "Get immediate AI generated response",
         });
         usedIndices.add(randNum);
       }
@@ -252,7 +250,6 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
                 >
                   <ConversationStarter
                     question={item.question}
-                    subtext={item.subtext}
                     onAsk={handleSend}
                   />
                 </motion.div>
