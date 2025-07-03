@@ -14,22 +14,20 @@ import {
   User,
 } from "lucide-react";
 import clsx from "clsx";
-import { getRecentChats, deleteChat } from "../utils/localStorageUtils";
 import { useSession, signIn, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 interface Chat {
-  id: string;
+  uuid: string;
   title: string;
   updatedAt: string;
 }
 
 interface SideBarProps {
-  onNewChat: () => void;
   onToggleTheme: () => void;
   themeMode: "light" | "dark";
   collapsed: boolean;
   onToggleCollapse: () => void;
-  onChatSelect: (chat: Chat) => void;
   currentChatId?: string;
 }
 
@@ -100,43 +98,65 @@ function UserAuth({ collapsed }: { collapsed: boolean }) {
 }
 
 function SideBar({ 
-  onNewChat, 
   onToggleTheme, 
   themeMode, 
   collapsed, 
   onToggleCollapse,
-  onChatSelect,
-  currentChatId
+  currentChatId,
 }: SideBarProps) {
   const [recentChats, setRecentChats] = useState<Chat[]>([]);
+  const { data: session, status } = useSession();
+  const router = useRouter();
 
   useEffect(() => {
-    loadRecentChats();
-    
-    // Refresh chats every 2 seconds to catch new auto-saved chats
-    const interval = setInterval(loadRecentChats, 2000);
-    return () => clearInterval(interval);
-  }, []);
+    if (status === 'authenticated') {
+      loadRecentChats();
+    }
+  }, [status, currentChatId]);
 
-  const loadRecentChats = (): void => {
-    const chats = getRecentChats(15);
-    setRecentChats(chats);
+  const loadRecentChats = async (): Promise<void> => {
+    try {
+      const response = await fetch('/api/chats');
+      if (response.ok) {
+        const chats = await response.json();
+        setRecentChats(chats);
+      } else {
+        console.error('Failed to fetch recent chats');
+      }
+    } catch (error) {
+      console.error('Error fetching recent chats:', error);
+    }
   };
 
   const handleNewChatClick = (): void => {
-    onNewChat();
+    router.push('/chat/new');
   };
 
   const handleChatSelect = (chat: Chat): void => {
-    onChatSelect(chat);
+    router.push(`/chat/${chat.uuid}`);
   };
 
-  const handleDeleteChat = (e: React.MouseEvent, chatId: string): void => {
+  const handleDeleteChat = async (
+    e: React.MouseEvent,
+    chatId: string
+  ): Promise<void> => {
     e.stopPropagation();
-    deleteChat(chatId);
-    loadRecentChats();
-    if (currentChatId === chatId) {
-      onNewChat();
+    try {
+      const response = await fetch(`/api/chat/${chatId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setRecentChats((prev) => prev.filter((c) => c.uuid !== chatId));
+        if (currentChatId === chatId) {
+          router.push('/');
+        }
+      } else {
+        console.error('Failed to delete chat');
+        // Handle error, maybe show a notification
+      }
+    } catch (error) {
+      console.error('Error deleting chat:', error);
     }
   };
 
@@ -219,7 +239,7 @@ function SideBar({
             <AnimatePresence>
               {recentChats.map((chat, index) => (
                 <motion.div
-                  key={chat.id}
+                  key={chat.uuid}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
@@ -227,7 +247,7 @@ function SideBar({
                   className={clsx(
                     "group relative p-3 rounded-lg cursor-pointer transition-all duration-200",
                     "hover:bg-[var(--bg-tertiary)] border border-transparent",
-                    currentChatId === chat.id 
+                    currentChatId === chat.uuid 
                       ? "bg-[var(--bg-tertiary)] border-[var(--primary-color)]" 
                       : "hover:border-[var(--border-color)]"
                   )}
@@ -252,13 +272,14 @@ function SideBar({
                         opacity: 1, 
                         scale: 1 
                       }}
+                      exit={{ opacity: 0, scale: 0.8 }}
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
-                      onClick={(e) => handleDeleteChat(e, chat.id)}
+                      onClick={(e) => handleDeleteChat(e, chat.uuid)}
                       className="opacity-0 group-hover:opacity-100 p-1 rounded transition-all duration-200 hover:bg-red-100 dark:hover:bg-red-900/20"
                       title="Delete chat"
                     >
-                      <Trash2 className="w-3 h-3 text-red-500" />
+                      <Trash2 className="w-4 h-4 text-red-500" />
                     </motion.button>
                   </div>
                 </motion.div>
@@ -268,58 +289,48 @@ function SideBar({
         </div>
       )}
 
-      {collapsed && (
-        <div className="flex-1 flex flex-col gap-2">
-          {recentChats.slice(0, 5).map((chat) => (
-            <motion.button
-              key={chat.id}
-              onClick={() => handleChatSelect(chat)}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className={clsx(
-                "p-3 rounded-xl transition-all duration-200",
-                currentChatId === chat.id 
-                  ? "bg-[var(--bg-tertiary)] border border-[var(--primary-color)]"
-                  : "hover:bg-[var(--bg-tertiary)] border border-transparent"
-              )}
-              title={chat.title}
-            >
-              <MessageSquare className="w-5 h-5" style={{ color: "var(--text-secondary)" }} />
-            </motion.button>
-          ))}
-        </div>
-      )}
-
       <div className="mt-auto flex flex-col gap-2">
+        <div className="flex flex-col gap-1">
+          {!collapsed && recentChats.length > 5 && (
+            <div className="flex-1 min-h-0 flex flex-col">
+              <div className="flex items-center gap-2 mb-3 px-2">
+                <Clock
+                  className="w-4 h-4"
+                  style={{ color: 'var(--text-secondary)' }}
+                />
+                <span
+                  className="text-xs font-medium"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  Recent Chats
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+
         <UserAuth collapsed={collapsed} />
-        <motion.button
-          onClick={onToggleTheme}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className={clsx(
-            "flex items-center gap-3 p-3 rounded-xl transition-all duration-200 w-full",
-            "bg-[var(--bg-tertiary)] hover:bg-[var(--bubble-bg)] border border-[var(--border-color)]",
-            collapsed && "justify-center"
-          )}
-          title={collapsed ? `Switch to ${themeMode === "dark" ? "Light" : "Dark"} Mode` : undefined}
-        >
-          {themeMode === "dark" ? (
-            <Sun className="w-5 h-5 flex-shrink-0" />
-          ) : (
-            <Moon className="w-5 h-5 flex-shrink-0" />
-          )}
-          {!collapsed && (
-            <motion.span
-              initial={{ opacity: 0, width: 0 }}
-              animate={{ opacity: 1, width: "auto" }}
-              exit={{ opacity: 0, width: 0 }}
-              className="text-sm font-medium whitespace-nowrap overflow-hidden"
-              style={{ color: "var(--text-color)" }}
-            >
-              {themeMode === "dark" ? "Light Mode" : "Dark Mode"}
-            </motion.span>
-          )}
-        </motion.button>
+
+        <div className="flex items-center justify-between">
+          <motion.button
+            onClick={onToggleTheme}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            className="flex items-center gap-2 p-2 rounded-lg transition-all duration-200 hover:bg-[var(--bg-tertiary)]"
+            title={collapsed ? 'Toggle theme' : undefined}
+          >
+            {themeMode === 'light' ? (
+              <Sun className="w-5 h-5" />
+            ) : (
+              <Moon className="w-5 h-5" />
+            )}
+            {!collapsed && (
+              <span className="text-sm" style={{ color: 'var(--text-color)' }}>
+                {themeMode.charAt(0).toUpperCase() + themeMode.slice(1)}
+              </span>
+            )}
+          </motion.button>
+        </div>
       </div>
     </div>
   );

@@ -1,276 +1,172 @@
-import { useState, useEffect } from "react";
-import { 
-  saveChat, 
-  generateChatId, 
-  generateChatTitle, 
-  getChatById 
-} from "../utils/localStorageUtils";
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 export interface Message {
-  who: string;
-  quesAns: string;
-  time: string;
-  rating?: number;
-  feedback?: string;
+  _id?: string;
+  role: 'user' | 'assistant';
+  content: string;
 }
 
-export interface Chat {
-  id: string;
-  title: string;
-  messages: Message[];
-  modelType: string;
-  model: string;
-}
+export type ModelType = 'groq' | 'openrouter' | 'perplexity';
 
-export type ModelType = "groq" | "openrouter" | "perplexity";
-
-export default function useConversation(initialChatId: string | undefined = undefined) {
-  const [currentChatId, setCurrentChatId] = useState<string | null>(initialChatId || null);
-  const [currentSession, setCurrentSession] = useState<Message[]>([]);
-  const [selectedModelType, setSelectedModelType] = useState<ModelType>("groq");
-  const [selectedModel, setSelectedModel] = useState<string>(
-    "meta-llama/llama-4-maverick-17b-128e-instruct"
-  );
+export default function useConversation(chatId: string | undefined) {
+  const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [isStreaming, setIsStreaming] = useState<boolean>(false);
-  const [streamingResponse, setStreamingResponse] = useState<string>("");
+  const [selectedModelType, setSelectedModelType] = useState<ModelType>('groq');
+  const [selectedModel, setSelectedModel] = useState<string>('llama3-8b-8192');
+  const previousChatIdRef = useRef<string | undefined>();
 
   useEffect(() => {
-    if (initialChatId) {
-      loadChat(initialChatId);
-    } else {
-      setCurrentSession([]);
-      setCurrentChatId(null);
-    }
-  }, [initialChatId]);
+    const fetchMessages = async () => {
+      if (!chatId || chatId === 'new') {
+        setMessages([]);
+        previousChatIdRef.current = chatId;
+        return;
+      }
+      
+      // Don't fetch if we're transitioning from 'new' to a real chat ID (same conversation)
+      if (previousChatIdRef.current === 'new' && messages.length > 0) {
+        previousChatIdRef.current = chatId;
+        return;
+      }
+      
+      // Only fetch if this is a different chat
+      if (previousChatIdRef.current !== chatId) {
+        setLoading(true);
+        try {
+          const response = await fetch(`/api/chat/${chatId}/messages`);
+          if (response.ok) {
+            const data = await response.json();
+            setMessages(data);
+          } else {
+            console.error('Failed to fetch messages');
+            setMessages([]);
+          }
+        } catch (error) {
+          console.error('Error fetching messages:', error);
+          setMessages([]);
+        } finally {
+          setLoading(false);
+        }
+      }
+      
+      previousChatIdRef.current = chatId;
+    };
 
-  const loadChat = (chatId: string): void => {
-    const chat = getChatById(chatId);
-    if (chat) {
-      setCurrentChatId(chatId);
-      setCurrentSession(chat.messages || []);
-      setSelectedModelType((chat.modelType as ModelType) || "groq");
-      setSelectedModel(chat.model || "meta-llama/llama-4-maverick-17b-128e-instruct");
-    }
-  };
-
-  const startNewChat = (): void => {
-    setCurrentChatId(null);
-    setCurrentSession([]);
-    setSelectedModelType("groq");
-    setSelectedModel("meta-llama/llama-4-maverick-17b-128e-instruct");
-  };
+    fetchMessages();
+  }, [chatId]);
 
   useEffect(() => {
-    // Optionally set default models when user changes model types
-    if (selectedModelType === "groq") {
-      setSelectedModel("meta-llama/llama-4-maverick-17b-128e-instruct");
-    } else if (selectedModelType === "openrouter") {
-      setSelectedModel("deepseek/deepseek-r1:free");
+    if (selectedModelType === 'groq') {
+      setSelectedModel('llama3-8b-8192');
+    } else if (selectedModelType === 'openrouter') {
+      setSelectedModel('mythomist/mythomax-l2-13b');
     } else {
-      setSelectedModel("r1-1776");
+      setSelectedModel('llama-3-sonar-small-32k-online');
     }
   }, [selectedModelType]);
 
-  const onAsk = async (input: string): Promise<void> => {
-    const newUserMessage: Message = {
-      who: "user",
-      quesAns: input,
-      time: new Date().toLocaleString(),
-    };
-    setCurrentSession((prev) => [...prev, newUserMessage]);
-    await getAiAnswer(input, newUserMessage);
-  };
+  const sendMessage = useCallback(
+    async (input: string) => {
+      let currentChatId = chatId;
+      let newChatId: string | null = null;
 
-  // Helper function to check if a model is a reasoning model
-  const isReasoningModel = (modelType: ModelType, modelId: string): boolean => {
-    const reasoningModels = [
-      'deepseek/deepseek-r1',
-      'deepseek/deepseek-r1:free',
-      'r1-1776',
-      'meta-llama/llama-4-maverick-17b-128e-instruct'
-    ];
-    return reasoningModels.some(model => modelId.includes(model) || modelId === model);
-  };
+      if (!input.trim()) return;
 
-  const getAiAnswer = async (input: string, newUserMessage: Message): Promise<void> => {
-    setLoading(true);
-    setIsStreaming(true);
-    setStreamingResponse("");
-    let fullResponse = "";
+      const userMessage: Message = { role: 'user', content: input };
+      setMessages((prevMessages) => [...prevMessages, userMessage]);
+      setLoading(true);
 
-    // Convert currentSession to proper messages format
-    const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
-    
-    // Add all previous messages from the session
-    currentSession.forEach((item) => {
-      if (item.who === "user") {
-        messages.push({ role: "user", content: item.quesAns });
-      } else {
-        messages.push({ role: "assistant", content: item.quesAns });
-      }
-    });
-    
-    // Add the new user message
-    messages.push({ role: "user", content: input });
-
-    try {
-      const shouldStream = false;
-      let apiEndpoint = '';
-      
-      // Determine which API endpoint to use
-      if (selectedModelType === "perplexity") {
-        apiEndpoint = '/api/chat/perplexity';
-      } else if (selectedModelType === "groq") {
-        apiEndpoint = '/api/chat/groq';
-      } else if (selectedModelType === "openrouter") {
-        apiEndpoint = '/api/chat/openrouter';
-      }
-
-      const response = await fetch(apiEndpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: selectedModel,
-          messages: messages,
-          stream: shouldStream,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      if (shouldStream) {
-        // Handle streaming responses
-        const reader = response.body?.getReader();
-        if (!reader) {
-          throw new Error("Unable to read response stream");
-        }
-        
-        const decoder = new TextDecoder();
-        let buffer = "";
-
-        const processStream = async (): Promise<void> => {
-          while (true) {
-            const { value, done } = await reader.read();
-            if (done) break;
-            
-            buffer += decoder.decode(value, { stream: true });
-            const parts = buffer.split("\n\n");
-            
-            for (let i = 0; i < parts.length - 1; i++) {
-              const part = parts[i];
-              if (part.startsWith("data: ")) {
-                const data = part.slice(6);
-                if (data === "[DONE]") {
-                  return;
-                }
-                try {
-                  const parsed = JSON.parse(data);
-                  const content = parsed.content || "";
-                  fullResponse += content;
-                  setStreamingResponse((prev) => prev + content);
-                } catch (e) {
-                  console.error("Error parsing JSON:", e, "Received:", data);
-                }
-              }
-            }
-            buffer = parts[parts.length - 1];
+      try {
+        if (!currentChatId || currentChatId === 'new') {
+          const createResponse = await fetch('/api/chat/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: input.substring(0, 30) }),
+          });
+          if (!createResponse.ok) {
+            throw new Error('Failed to create chat');
           }
+          const newChat = await createResponse.json();
+          currentChatId = newChat.uuid;
+          newChatId = newChat.uuid;
+        }
+
+        if (!currentChatId) {
+          throw new Error('No valid chat ID to send message to.');
+        }
+
+        // Save user message to DB
+        await fetch(`/api/chat/${currentChatId}/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(userMessage),
+        });
+
+        const allMessages = [
+          ...messages,
+          userMessage
+        ].map(({ role, content }) => ({ role, content }));
+
+        let apiEndpoint = '';
+        if (selectedModelType === 'perplexity') {
+          apiEndpoint = '/api/chat/perplexity';
+        } else if (selectedModelType === 'groq') {
+          apiEndpoint = '/api/chat/groq';
+        } else if (selectedModelType === 'openrouter') {
+          apiEndpoint = '/api/chat/openrouter';
+        }
+
+        const aiResponse = await fetch(apiEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: selectedModel,
+            messages: allMessages,
+          }),
+        });
+        console.log('aiResponse', aiResponse);
+
+        if (!aiResponse.ok) {
+          throw new Error(`AI API error! status: ${aiResponse.status}`);
+        }
+
+        const data = await aiResponse.json();
+        const aiMessageContent = data.choices[0].message.content;
+        const aiMessage: Message = {
+          role: 'assistant',
+          content: aiMessageContent,
         };
-        
-        await processStream();
 
-      } else {
-        // Handle non-streaming responses
-        const data = await response.json();
-        fullResponse = data.choices[0].message.content;
+        setMessages((prevMessages) => [...prevMessages, aiMessage]);
+
+        await fetch(`/api/chat/${currentChatId}/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(aiMessage),
+        });
+
+        return { newChatId };
+      } catch (error) {
+        console.error('Error sending message:', error);
+        const errorMessage: Message = {
+          role: 'assistant',
+          content: 'Sorry, I encountered an error. Please try again.',
+        };
+        setMessages((prevMessages) => [...prevMessages, errorMessage]);
+      } finally {
+        setLoading(false);
       }
-
-      const aiMessage: Message = {
-        who: "Soul AI",
-        quesAns: fullResponse,
-        time: new Date().toLocaleString(),
-        rating: 0,
-        feedback: "",
-      };
-      const updatedSession = [...currentSession, newUserMessage, aiMessage];
-      setCurrentSession(updatedSession);
-      await autoSave(updatedSession);
-      setIsStreaming(false);
-      setStreamingResponse("");
-    } catch (error) {
-      console.error('Error getting AI response:', error);
-      setIsStreaming(false);
-      setStreamingResponse("");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const autoSave = async (updatedSession: Message[]): Promise<string | null> => {
-    if (updatedSession.length === 0) return null;
-
-    let chatId = currentChatId;
-    let title = "";
-    
-    if (!chatId) {
-      chatId = generateChatId();
-      setCurrentChatId(chatId);
-      title = generateChatTitle(updatedSession[0]?.quesAns);
-    }
-
-    const chatData: Chat = {
-      id: chatId,
-      title: title || generateChatTitle(updatedSession[0]?.quesAns),
-      messages: updatedSession,
-      modelType: selectedModelType,
-      model: selectedModel
-    };
-
-    const success = saveChat(chatData);
-    if (success) {
-      console.log("Chat auto-saved:", chatId);
-    }
-    return chatId;
-  };
-
-  const onSave = async (): Promise<string | null> => {
-    const chatId = await autoSave(currentSession);
-    console.log("Chat manually saved:", chatId);
-    return chatId;
-  };
-
-  const updateRatingFeedback = (time: string, rating: number, feedback: string): void => {
-    setCurrentSession((prev) => {
-      const index = prev.findIndex((item) => item.time === time);
-      if (index !== -1) {
-        const updated = [...prev];
-        updated[index].rating = rating;
-        updated[index].feedback = feedback;
-        return updated;
-      }
-      return prev;
-    });
-  };
+    },
+    [chatId, messages, selectedModel, selectedModelType]
+  );
 
   return {
-    currentSession,
-    currentChatId,
-    selectedModelType,
-    setSelectedModelType,
+    messages,
+    loading,
+    sendMessage,
     selectedModel,
     setSelectedModel,
-    loading,
-    isStreaming,
-    streamingResponse,
-    onAsk,
-    onSave,
-    updateRatingFeedback,
-    loadChat,
-    startNewChat,
+    selectedModelType,
+    setSelectedModelType,
   };
 }

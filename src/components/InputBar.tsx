@@ -7,7 +7,6 @@ interface InputBarProps {
   inputText: string;
   setInputText: (text: string) => void;
   onAsk: (question: string) => void;
-  onSave?: () => void;
 }
 
 function InputBar({ inputText, setInputText, onAsk }: InputBarProps) {

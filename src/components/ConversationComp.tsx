@@ -5,46 +5,14 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import clsx from "clsx";
 
-interface ThinkResult {
-  reasoning: string;
-  answer: string;
-  inProgress: boolean;
-}
-
-function parseThink(text: string): ThinkResult {
-  const start = text.indexOf("<think>");
-  const end = text.indexOf("</think>");
-  let reasoning = "";
-  let answer = text;
-  let inProgress = false;
-
-  if (start !== -1) {
-    if (end !== -1 && end > start) {
-      // Complete reasoning block found
-      reasoning = text.slice(start + 7, end);
-      answer = (text.slice(0, start) + text.slice(end + 8)).trim();
-    } else {
-      // Incomplete reasoning block (streaming in progress)
-      reasoning = text.slice(start + 7);
-      answer = text.slice(0, start).trim();
-      inProgress = true;
-    }
-  }
-
-  return { reasoning, answer, inProgress };
-}
-
 interface ConversationCompProps {
-  who: string;
-  quesAns: string;
-  time: string;
+  role: 'user' | 'assistant';
+  content: string;
 }
 
-function ConversationComp({ who, quesAns, time }: ConversationCompProps) {
-  const { reasoning, answer, inProgress } = parseThink(quesAns);
-  const [open, setOpen] = useState<boolean>(inProgress); // Auto-open when reasoning is in progress
+function ConversationComp({ role, content }: ConversationCompProps) {
   const [copied, setCopied] = useState<boolean>(false);
-  const isUser = who === "user";
+  const isUser = role === 'user';
 
   const handleCopy = (text: string): void => {
     navigator.clipboard.writeText(text);
@@ -87,7 +55,7 @@ function ConversationComp({ who, quesAns, time }: ConversationCompProps) {
             {isUser ? "You" : "AI Assistant"}
           </span>
           <span>•</span>
-          <span>{time.split(",")[1]?.trim() || time}</span>
+          <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
         </div>
 
         <div className={clsx(
@@ -97,56 +65,8 @@ function ConversationComp({ who, quesAns, time }: ConversationCompProps) {
             ? "rounded-br-sm bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20" 
             : "rounded-bl-sm"
         )}>
-          {reasoning && (
-            <div className="mb-3">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={clsx(
-                  "flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200",
-                  "bg-[var(--bg-tertiary)] hover:bg-[var(--bubble-bg)] border border-[var(--border-color)]"
-                )}
-                onClick={() => setOpen((p) => !p)}
-                style={{ color: "var(--text-secondary)" }}
-              >
-                <Brain className="w-4 h-4" />
-                <span>AI Reasoning</span>
-                {inProgress && (
-                  <div className="w-2 h-2 bg-[var(--primary-color)] rounded-full animate-pulse" />
-                )}
-                {open ? (
-                  <ChevronUp className="w-4 h-4" />
-                ) : (
-                  <ChevronDown className="w-4 h-4" />
-                )}
-              </motion.button>
-              <AnimatePresence>
-                {open && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="mt-3 p-3 rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border-color)]"
-                  >
-                    <div className="prose prose-sm max-w-none text-xs" style={{ color: "var(--text-secondary)" }}>
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{reasoning}</ReactMarkdown>
-                      {inProgress && (
-                        <div className="flex items-center gap-2 mt-2 text-xs" style={{ color: "var(--text-muted)" }}>
-                          <div className="w-1 h-1 bg-current rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                          <div className="w-1 h-1 bg-current rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                          <div className="w-1 h-1 bg-current rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-                          <span>Reasoning in progress...</span>
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          )}
-
-          {answer && (
+          {/* This component no longer has special parsing for 'think' process */}
+          {content && (
             <div className={clsx(
               "prose prose-sm max-w-none",
               "prose-headings:text-[var(--text-color)]",
@@ -158,9 +78,9 @@ function ConversationComp({ who, quesAns, time }: ConversationCompProps) {
               "prose-blockquote:border-[var(--primary-color)]",
               "prose-blockquote:text-[var(--text-secondary)]"
             )}>
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{answer}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
               <button
-                onClick={() => handleCopy(answer)}
+                onClick={() => handleCopy(content)}
                 className="mt-2 text-xs text-[var(--text-secondary)] hover:text-[var(--primary-color)] flex items-center gap-1"
               >
                 {copied ? "Copied!" : <ClipboardCopy className="w-3 h-3" />} {copied ? "" : "Copy"}
