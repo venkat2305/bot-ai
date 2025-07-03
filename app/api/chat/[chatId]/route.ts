@@ -2,21 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Chat from '@/models/Chat';
 import Message from '@/models/Message';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-
-function getChatIdFromUrl(url: string) {
-  const pathParts = new URL(url).pathname.split('/');
-  return pathParts[3];
+import type { Session } from 'next-auth';
+interface RouteContext {
+  params: Promise<{ chatId: string }>;
 }
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { chatId: string } }
+  { params }: RouteContext
 ) {
   try {
-    const chatId = getChatIdFromUrl(req.url);
-    const session = await getServerSession(authOptions);
+    const { chatId } = await params;
+    const session = (await getServerSession(authOptions as any)) as Session | null;
     if (!session || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

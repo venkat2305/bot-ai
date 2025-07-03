@@ -4,10 +4,11 @@ import dbConnect from '@/lib/mongodb';
 import Chat from '@/models/Chat';
 import User from '@/models/User';
 import { authOptions } from '@/lib/auth';
+import type { Session } from 'next-auth';
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = (await getServerSession(authOptions as any)) as Session | null;
 
     if (!session || !session.user || !session.user.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
