@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI;
+const MONGODB_URI = process.env.MONGODB_URI as string;
 
 if (!MONGODB_URI) {
   throw new Error(
@@ -13,7 +13,17 @@ if (!MONGODB_URI) {
  * in development. This prevents connections from growing exponentially
  * during API Route usage.
  */
-let cached = global.mongoose;
+declare global {
+  var mongoose: {
+    conn: typeof import('mongoose') | null;
+    promise: Promise<typeof import('mongoose')> | null;
+  };
+}
+
+let cached: {
+  conn: typeof import('mongoose') | null;
+  promise: Promise<typeof import('mongoose')> | null;
+} = global.mongoose;
 
 if (!cached) {
   cached = global.mongoose = { conn: null, promise: null };
