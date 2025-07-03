@@ -12,7 +12,7 @@ export default function useConversation(chatId: string | undefined) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [selectedModelType, setSelectedModelType] = useState<ModelType>('groq');
-  const [selectedModel, setSelectedModel] = useState<string>('llama3-8b-8192');
+  const [selectedModel, setSelectedModel] = useState<string>('llama-3.1-8b-instant');
   const previousChatIdRef = useRef<string | undefined>();
 
   useEffect(() => {
@@ -57,7 +57,7 @@ export default function useConversation(chatId: string | undefined) {
 
   useEffect(() => {
     if (selectedModelType === 'groq') {
-      setSelectedModel('llama3-8b-8192');
+      setSelectedModel('llama-3.1-8b-instant');
     } else if (selectedModelType === 'openrouter') {
       setSelectedModel('mythomist/mythomax-l2-13b');
     } else {
