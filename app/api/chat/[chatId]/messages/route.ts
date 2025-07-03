@@ -1,19 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/lib/mongodb';
-import Chat from '@/models/Chat';
-import Message from '@/models/Message';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { type NextRequest, NextResponse } from 'next/server'
+import dbConnect from '@/lib/mongodb'
+import Chat from '@/models/Chat'
+import Message from '@/models/Message'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/lib/auth'
 
 function getChatIdFromUrl(url: string) {
   const pathParts = new URL(url).pathname.split('/');
   return pathParts[3];
 }
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { chatId: string } }
-) {
+export async function GET(req: NextRequest) {
   try {
     const chatId = getChatIdFromUrl(req.url);
     const session = await getServerSession(authOptions);
@@ -46,10 +43,7 @@ export async function GET(
   }
 }
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { chatId: string } }
-) {
+export async function POST(req: NextRequest) {
   try {
     const chatId = getChatIdFromUrl(req.url);
     const session = await getServerSession(authOptions);
