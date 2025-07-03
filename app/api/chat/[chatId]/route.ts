@@ -5,17 +5,12 @@ import Message from '@/models/Message';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
-function getChatIdFromUrl(url: string) {
-  const pathParts = new URL(url).pathname.split('/');
-  return pathParts[3];
-}
-
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { chatId: string } }
+  { params }: { params: Promise<{ chatId: string }> }
 ) {
   try {
-    const chatId = getChatIdFromUrl(req.url);
+    const { chatId } = await params;
     const session = await getServerSession(authOptions);
     if (!session || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
