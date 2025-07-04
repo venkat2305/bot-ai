@@ -2,8 +2,8 @@
 
 import { useState, useEffect, use } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import SideBar from "@/components/SideBar";
-import ConversationContainer from "@/components/ConversationContainer";
+import SideBar from "@/components/chat/SideBar";
+import ConversationContainer from "@/components/chat/ConversationContainer";
 
 interface Chat {
   id: string;

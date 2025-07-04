@@ -70,11 +70,14 @@ Builds the app for production and starts the production server.
 
 ## Project Structure
 
-- `/pages` - Next.js pages and routing
+- `/src/app` - Next.js App Router pages and API routes
 - `/src/components` - React components
+  - `/chat` - Chat UI components
+  - `/providers` - Context providers
 - `/src/hooks` - Custom React hooks
-- `/src/utils` - Utility functions
-- `/src/assets` - Static assets
+- `/src/lib` - Shared libraries and utilities
+- `/src/server/models` - Mongoose schemas
+- `/src/types` - TypeScript type declarations
 - `/public` - Public static files
 
 ## API Keys Setup
