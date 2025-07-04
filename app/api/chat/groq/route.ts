@@ -9,7 +9,6 @@ interface ChatMessage {
 interface ChatRequest {
   messages: ChatMessage[];
   model: string;
-  stream?: boolean;
 }
 
 export async function POST(req: NextRequest) {
@@ -20,7 +19,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { messages, model, stream }: ChatRequest = await req.json();
+    const { messages, model }: ChatRequest = await req.json();
 
     if (!messages || !model) {
       return NextResponse.json({ error: 'Messages and model are required' }, { status: 400 });
@@ -31,45 +30,13 @@ export async function POST(req: NextRequest) {
       baseURL: "https://api.groq.com/openai/v1",
     });
 
-    if (stream) {
-      const response = await groq.chat.completions.create({
-        model,
-        messages,
-        stream: true,
-      });
+    const response = await groq.chat.completions.create({
+      model,
+      messages,
+      stream: false,
+    });
 
-      const readableStream = new ReadableStream({
-        async start(controller) {
-          const encoder = new TextEncoder();
-          for await (const chunk of response) {
-            const content = chunk.choices[0]?.delta?.content || '';
-            if (content) {
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\\n\\n`));
-            }
-          }
-          controller.enqueue(encoder.encode('data: [DONE]\\n\\n'));
-          controller.close();
-        },
-      });
-
-      return new Response(readableStream, {
-        headers: {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
-          'Access-Control-Allow-Origin': '*',
-        },
-      });
-
-    } else {
-      const response = await groq.chat.completions.create({
-        model,
-        messages,
-        stream: false,
-      });
-
-      return NextResponse.json(response);
-    }
+    return NextResponse.json(response);
   } catch (error) {
     console.error('Error with Groq chat completion:', error);
     return NextResponse.json({ error: 'Failed to get chat completion' }, { status: 500 });
