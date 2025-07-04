@@ -5,9 +5,9 @@ const nextConfig: NextConfig = {
   images: {
     domains: [],
   },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+  // typescript: {
+  //   ignoreBuildErrors: true,
+  // },
   // eslint: {
   //   ignoreDuringBuilds: true,
   // },

@@ -1,8 +1,9 @@
 import GoogleProvider from 'next-auth/providers/google';
 import { MongoDBAdapter } from "@auth/mongodb-adapter";
 import clientPromise from '@/lib/mongoClient';
+import type { AuthOptions } from 'next-auth';
 
-export const authOptions = {
+export const authOptions: AuthOptions = {
   adapter: MongoDBAdapter(clientPromise),
   providers: [
     GoogleProvider({
@@ -12,7 +13,7 @@ export const authOptions = {
   ],
   secret: process.env.NEXTAUTH_SECRET,
   session: {
-    strategy: 'database',
+    strategy: 'database' as const,
   },
   callbacks: {
     async session({ session, user }: { session: any; user: any }) {

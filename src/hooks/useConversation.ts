@@ -13,7 +13,7 @@ export default function useConversation(chatId: string | undefined) {
   const [loading, setLoading] = useState<boolean>(false);
   const [selectedModelType, setSelectedModelType] = useState<ModelType>('groq');
   const [selectedModel, setSelectedModel] = useState<string>('llama-3.1-8b-instant');
-  const previousChatIdRef = useRef<string | undefined>();
+  const previousChatIdRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     const fetchMessages = async () => {
