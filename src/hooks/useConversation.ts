@@ -59,9 +59,9 @@ export default function useConversation(chatId: string | undefined) {
     if (selectedModelType === 'groq') {
       setSelectedModel('llama-3.1-8b-instant');
     } else if (selectedModelType === 'openrouter') {
-      setSelectedModel('mythomist/mythomax-l2-13b');
+      setSelectedModel('openrouter/cypher-alpha:free');
     } else {
-      setSelectedModel('llama-3-sonar-small-32k-online');
+      setSelectedModel('r1-1776');
     }
   }, [selectedModelType]);
 
