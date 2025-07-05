@@ -1,15 +1,13 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, Sparkles, Loader2 } from "lucide-react";
+import { ChevronDown, Sparkles, Loader2, Zap, Brain, Search, Image as ImageIcon, FileText } from "lucide-react";
 import Image from "next/image";
 import InputBar from "./InputBar";
 import ConversationComp from "./ConversationComp";
 import ConversationStarter from "./ConversationStarter";
 import siteIcon from "../../assets/site-icon.png";
 import sampleData from "../../assets/sampleData.json";
-import useConversation, { ModelType } from "../../hooks/useConversation";
-import useOpenRouterModels from "../../hooks/useOpenRouterModels";
-import useGroqModels from "../../hooks/useGroqModels";
+import useConversation from "../../hooks/useConversation";
 import clsx from "clsx";
 import { useRouter } from 'next/navigation';
 
@@ -24,30 +22,29 @@ interface ConversationStarter {
 interface SelectOption {
   value: string;
   label: string;
+  description?: string;
+  capabilities?: string[];
 }
 
 interface CustomSelectProps {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   options: SelectOption[];
-  placeholder: string;
+  placeholder?: string;
 }
 
 function ConversationContainer({ chatId }: ConversationContainerProps) {
   const {
     messages,
     loading,
-    selectedModelType,
-    setSelectedModelType,
+    selectedModelId,
+    setSelectedModelId,
     selectedModel,
-    setSelectedModel,
+    availableModels,
     sendMessage,
   } = useConversation(chatId);
   const router = useRouter();
 
-  const { openRouterModels } = useOpenRouterModels();
-  const { groqModels } = useGroqModels();
-  const perplexityModels: string[] = ["r1-1776"];
   const [conversationStarters, setConversationStarters] = React.useState<ConversationStarter[]>([]);
 
   React.useEffect(() => {
@@ -76,12 +73,21 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
     }
   };
 
-  const CustomSelect: React.FC<CustomSelectProps> = ({ value, onChange, options, placeholder }) => (
+  const getCapabilityIcons = (capabilities: any) => {
+    const icons = [];
+    if (capabilities.isReasoningModel) icons.push(<Brain key="reasoning" className="w-3 h-3" title="Reasoning Model" />);
+    if (capabilities.searchSupport) icons.push(<Search key="search" className="w-3 h-3" title="Search Support" />);
+    if (capabilities.imageInput) icons.push(<ImageIcon key="image" className="w-3 h-3" title="Image Input" />);
+    if (capabilities.pdfSupport) icons.push(<FileText key="pdf" className="w-3 h-3" title="PDF Support" />);
+    return icons;
+  };
+
+  const ModelSelect: React.FC<CustomSelectProps> = ({ value, onChange, options }) => (
     <div className="relative">
       <select
         className={clsx(
           "appearance-none bg-[var(--card-bg)] border border-[var(--border-color)]",
-          "rounded-xl px-4 py-2.5 pr-10 text-sm font-medium",
+          "rounded-xl px-4 py-2.5 pr-10 text-sm font-medium min-w-[280px]",
           "text-[var(--text-color)] cursor-pointer",
           "focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent",
           "transition-all duration-200"
@@ -103,22 +109,23 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
     </div>
   );
 
-  const modelTypeOptions: SelectOption[] = [
-    { value: "groq", label: "Groq Models" },
-    { value: "openrouter", label: "OpenRouter Models" },
-    { value: "perplexity", label: "Perplexity" }
-  ];
-
   const getModelOptions = (): SelectOption[] => {
-    switch (selectedModelType) {
-      case "groq":
-        return groqModels.map(model => ({ value: model.id, label: model.id }));
-      case "openrouter":
-        return openRouterModels.map(model => ({ value: model.id, label: model.name }));
-      case "perplexity":
-        return perplexityModels.map(model => ({ value: model, label: model }));
-      default:
-        return [];
+    return availableModels.map(model => ({
+      value: model.id,
+      label: `${model.displayName} (${model.serviceProvider.toUpperCase()})`,
+      description: model.description,
+      capabilities: Object.entries(model.capabilities)
+        .filter(([_, value]) => value)
+        .map(([key, _]) => key)
+    }));
+  };
+
+  const getProviderBadgeColor = (provider: string) => {
+    switch (provider) {
+      case 'groq': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300';
+      case 'openrouter': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300';
+      case 'perplexity': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300';
     }
   };
 
@@ -144,47 +151,36 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
           </div>
         </div>
         
-        <div className="flex gap-3">
-          <CustomSelect
-            value={selectedModelType}
-            onChange={(e) => setSelectedModelType(e.target.value as ModelType)}
-            options={modelTypeOptions}
-            placeholder="Select Model Type"
-          />
-          <CustomSelect
-            value={selectedModel}
-            onChange={(e) => setSelectedModel(e.target.value)}
+        <div className="flex items-center gap-4">
+          {selectedModel && (
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--card-bg)] border border-[var(--border-color)]">
+              <span className={clsx(
+                "px-2 py-1 rounded-md text-xs font-medium",
+                getProviderBadgeColor(selectedModel.serviceProvider)
+              )}>
+                {selectedModel.serviceProvider.toUpperCase()}
+              </span>
+              <div className="flex items-center gap-1">
+                {getCapabilityIcons(selectedModel.capabilities)}
+              </div>
+              <span className="text-xs text-[var(--text-secondary)]">
+                {selectedModel.contextWindow.toLocaleString()} ctx
+              </span>
+            </div>
+          )}
+          
+          <ModelSelect
+            value={selectedModelId}
+            onChange={(e) => setSelectedModelId(e.target.value)}
             options={getModelOptions()}
-            placeholder="Select Model"
+            placeholder="Select AI Model"
           />
         </div>
       </motion.div>
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <AnimatePresence mode="wait">
-          {messages.length ? (
-            <motion.div
-              key="conversation"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin"
-            >
-              {messages.map((item, index) => (
-                <motion.div
-                  key={item._id || index}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <ConversationComp
-                    role={item.role}
-                    content={item.content}
-                  />
-                </motion.div>
-              ))}
-            </motion.div>
-          ) : (
+          {messages.length === 0 ? (
             <motion.div
               key="welcome"
               initial={{ opacity: 0, scale: 0.95 }}
@@ -210,10 +206,42 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
                 <h2 className="text-3xl font-bold mb-3" style={{ color: "var(--text-color)" }}>
                   How Can I Help You Today?
                 </h2>
-                <p className="text-lg" style={{ color: "var(--text-secondary)" }}>
+                <p className="text-lg mb-4" style={{ color: "var(--text-secondary)" }}>
                   Ask me anything, and I'll provide detailed, helpful responses
                 </p>
+                {selectedModel && (
+                  <div className="flex items-center justify-center gap-2 text-sm" style={{ color: "var(--text-secondary)" }}>
+                    <Zap className="w-4 h-4" />
+                    <span>Currently using {selectedModel.displayName}</span>
+                  </div>
+                )}
               </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-4xl">
+                {conversationStarters.map((starter, index) => (
+                  <ConversationStarter
+                    key={index}
+                    question={starter.question}
+                    onClick={() => handleSend(starter.question)}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="conversation"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex-1 overflow-y-auto p-6 space-y-6"
+            >
+              {messages.map((message, index) => (
+                <ConversationComp
+                  key={index}
+                  role={message.role}
+                  content={message.content}
+                />
+              ))}
             </motion.div>
           )}
         </AnimatePresence>
@@ -234,32 +262,12 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
         )}
 
         <div className="p-6 border-t" style={{ borderColor: "var(--border-color)" }}>
-          {messages.length === 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6"
-            >
-              {conversationStarters.map((item, index) => (
-                <motion.div
-                  key={item.question}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 * index }}
-                >
-                  <ConversationStarter
-                    question={item.question}
-                    onAsk={handleSend}
-                  />
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
           <InputBar
-            inputText={inputText}
-            setInputText={setInputText}
-            onAsk={handleSend}
+            value={inputText}
+            onChange={setInputText}
+            onSend={handleSend}
+            disabled={loading}
+            placeholder="Type your message..."
           />
         </div>
       </div>

@@ -5,12 +5,12 @@ import clsx from "clsx";
 interface ConversationStarterProps {
   question: string;
   subtext?: string;
-  onAsk: (question: string) => void;
+  onClick: (question: string) => void;
 }
 
-function ConversationStarter({ question, subtext, onAsk }: ConversationStarterProps) {
+function ConversationStarter({ question, subtext, onClick }: ConversationStarterProps) {
   const handleClick = (): void => {
-    onAsk(question);
+    onClick(question);
   };
 
   return (

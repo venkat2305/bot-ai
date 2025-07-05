@@ -1,19 +1,19 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { ModelConfig, getActiveModels, getModelById, DEFAULT_MODEL_ID } from '@/config/models';
 
 export interface Message {
-  _id?: string;
   role: 'user' | 'assistant';
   content: string;
 }
 
-export type ModelType = 'groq' | 'openrouter' | 'perplexity';
-
 export default function useConversation(chatId: string | undefined) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [selectedModelType, setSelectedModelType] = useState<ModelType>('groq');
-  const [selectedModel, setSelectedModel] = useState<string>('llama-3.1-8b-instant');
+  const [selectedModelId, setSelectedModelId] = useState<string>(DEFAULT_MODEL_ID);
   const previousChatIdRef = useRef<string | undefined>(undefined);
+
+  // Get the selected model configuration
+  const selectedModel = getModelById(selectedModelId);
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -55,22 +55,16 @@ export default function useConversation(chatId: string | undefined) {
     fetchMessages();
   }, [chatId]);
 
-  useEffect(() => {
-    if (selectedModelType === 'groq') {
-      setSelectedModel('llama-3.1-8b-instant');
-    } else if (selectedModelType === 'openrouter') {
-      setSelectedModel('openrouter/cypher-alpha:free');
-    } else {
-      setSelectedModel('r1-1776');
-    }
-  }, [selectedModelType]);
-
   const sendMessage = useCallback(
     async (input: string) => {
       let currentChatId = chatId;
       let newChatId: string | null = null;
 
       if (!input.trim()) return;
+      if (!selectedModel) {
+        console.error('No model selected');
+        return;
+      }
 
       const userMessage: Message = { role: 'user', content: input };
       setMessages((prevMessages) => [...prevMessages, userMessage]);
@@ -107,24 +101,15 @@ export default function useConversation(chatId: string | undefined) {
           userMessage
         ].map(({ role, content }) => ({ role, content }));
 
-        let apiEndpoint = '';
-        if (selectedModelType === 'perplexity') {
-          apiEndpoint = '/api/chat/perplexity';
-        } else if (selectedModelType === 'groq') {
-          apiEndpoint = '/api/chat/groq';
-        } else if (selectedModelType === 'openrouter') {
-          apiEndpoint = '/api/chat/openrouter';
-        }
-
-        const aiResponse = await fetch(apiEndpoint, {
+        // Use the model's configured API endpoint
+        const aiResponse = await fetch(selectedModel.apiEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            model: selectedModel,
+            model: selectedModel.name,
             messages: allMessages,
           }),
         });
-        console.log('aiResponse', aiResponse);
 
         if (!aiResponse.ok) {
           throw new Error(`AI API error! status: ${aiResponse.status}`);
@@ -157,16 +142,16 @@ export default function useConversation(chatId: string | undefined) {
         setLoading(false);
       }
     },
-    [chatId, messages, selectedModel, selectedModelType]
+    [chatId, messages, selectedModel]
   );
 
   return {
     messages,
     loading,
     sendMessage,
+    selectedModelId,
+    setSelectedModelId,
     selectedModel,
-    setSelectedModel,
-    selectedModelType,
-    setSelectedModelType,
+    availableModels: getActiveModels(),
   };
 }
