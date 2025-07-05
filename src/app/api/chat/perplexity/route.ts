@@ -33,6 +33,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model,
         messages,
+        stream: true,
       }),
     });
 
@@ -40,8 +41,53 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `HTTP error! status: ${response.status}` }, { status: response.status });
     }
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    const encoder = new TextEncoder();
+    const readable = new ReadableStream({
+      async start(controller) {
+        try {
+          const reader = response.body?.getReader();
+          if (!reader) {
+            throw new Error('No response body reader available');
+          }
+
+          const decoder = new TextDecoder();
+          let buffer = '';
+
+          while (true) {
+            const { done, value } = await reader.read();
+            
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            
+            // Keep the last incomplete line in buffer
+            buffer = lines.pop() || '';
+
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (trimmed.startsWith('data: ')) {
+                controller.enqueue(encoder.encode(`${trimmed}\n\n`));
+              }
+            }
+          }
+
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+          controller.close();
+          reader.releaseLock();
+        } catch (error) {
+          controller.error(error);
+        }
+      },
+    });
+
+    return new Response(readable, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    });
   } catch (error) {
     console.error('Error with Perplexity chat completion:', error);
     return NextResponse.json({ error: 'Failed to get chat completion' }, { status: 500 });

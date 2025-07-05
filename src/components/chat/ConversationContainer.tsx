@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, Sparkles, Loader2, Zap, Brain, Search, Image as ImageIcon, FileText } from "lucide-react";
+import { ChevronDown, Sparkles, Loader2, Zap, Brain, Search, Image as ImageIcon, FileText, X } from "lucide-react";
 import Image from "next/image";
 import InputBar from "./InputBar";
 import ConversationComp from "./ConversationComp";
@@ -42,6 +42,8 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
     selectedModel,
     availableModels,
     sendMessage,
+    isStreaming,
+    cancelStream,
   } = useConversation(chatId);
   const router = useRouter();
 
@@ -75,10 +77,10 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
 
   const getCapabilityIcons = (capabilities: any) => {
     const icons = [];
-    if (capabilities.isReasoningModel) icons.push(<Brain key="reasoning" className="w-3 h-3" title="Reasoning Model" />);
-    if (capabilities.searchSupport) icons.push(<Search key="search" className="w-3 h-3" title="Search Support" />);
-    if (capabilities.imageInput) icons.push(<ImageIcon key="image" className="w-3 h-3" title="Image Input" />);
-    if (capabilities.pdfSupport) icons.push(<FileText key="pdf" className="w-3 h-3" title="PDF Support" />);
+    if (capabilities.isReasoningModel) icons.push(<Brain key="reasoning" className="w-3 h-3" />);
+    if (capabilities.searchSupport) icons.push(<Search key="search" className="w-3 h-3" />);
+    if (capabilities.imageInput) icons.push(<ImageIcon key="image" className="w-3 h-3" />);
+    if (capabilities.pdfSupport) icons.push(<FileText key="pdf" className="w-3 h-3" />);
     return icons;
   };
 
@@ -240,13 +242,14 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
                   key={index}
                   role={message.role}
                   content={message.content}
+                  isStreaming={message.isStreaming}
                 />
               ))}
             </motion.div>
           )}
         </AnimatePresence>
 
-        {loading && (
+        {(loading || isStreaming) && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -257,7 +260,18 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
             }}
           >
             <Loader2 className="w-5 h-5 animate-spin mr-2" />
-            <span className="text-sm font-medium">AI is thinking...</span>
+            <span className="text-sm font-medium">
+              {isStreaming ? "AI is streaming..." : "AI is thinking..."}
+            </span>
+            {isStreaming && (
+              <button
+                onClick={cancelStream}
+                className="ml-4 px-3 py-1 text-xs rounded-md bg-red-500 text-white hover:bg-red-600 transition-colors flex items-center gap-1"
+              >
+                <X className="w-3 h-3" />
+                Cancel
+              </button>
+            )}
           </motion.div>
         )}
 
@@ -266,7 +280,7 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
             value={inputText}
             onChange={setInputText}
             onSend={handleSend}
-            disabled={loading}
+            disabled={loading || isStreaming}
             placeholder="Type your message..."
           />
         </div>

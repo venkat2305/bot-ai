@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ModelConfig, getActiveModels, getModelById, DEFAULT_MODEL_ID } from '@/config/models';
+import { useStreamingChat } from './useStreamingChat';
 
 export interface Message {
   role: 'user' | 'assistant';
   content: string;
+  isStreaming?: boolean;
 }
 
 export default function useConversation(chatId: string | undefined) {
@@ -14,6 +16,18 @@ export default function useConversation(chatId: string | undefined) {
 
   // Get the selected model configuration
   const selectedModel = getModelById(selectedModelId);
+
+  // Initialize streaming chat
+  const { streamChat, isStreaming, cancelStream } = useStreamingChat({
+    onError: (error) => {
+      console.error('Streaming error:', error);
+      const errorMessage: Message = {
+        role: 'assistant',
+        content: 'Sorry, I encountered an error during streaming. Please try again.',
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    },
+  });
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -101,33 +115,48 @@ export default function useConversation(chatId: string | undefined) {
           userMessage
         ].map(({ role, content }) => ({ role, content }));
 
-        // Use the model's configured API endpoint
-        const aiResponse = await fetch(selectedModel.apiEndpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: selectedModel.name,
-            messages: allMessages,
-          }),
+        // Create streaming assistant message
+        const streamingMessage: Message = {
+          role: 'assistant',
+          content: '',
+          isStreaming: true,
+        };
+        setMessages((prevMessages) => [...prevMessages, streamingMessage]);
+
+        let assistantContent = '';
+        await streamChat(allMessages, selectedModel, (chunk) => {
+          assistantContent += chunk;
+          setMessages((prevMessages) => {
+            const newMessages = [...prevMessages];
+            const lastMessage = newMessages[newMessages.length - 1];
+            if (lastMessage.role === 'assistant' && lastMessage.isStreaming) {
+              lastMessage.content = assistantContent;
+            }
+            return newMessages;
+          });
         });
 
-        if (!aiResponse.ok) {
-          throw new Error(`AI API error! status: ${aiResponse.status}`);
-        }
-
-        const data = await aiResponse.json();
-        const aiMessageContent = data.choices[0].message.content;
-        const aiMessage: Message = {
+        // Finalize the streaming message
+        const finalMessage: Message = {
           role: 'assistant',
-          content: aiMessageContent,
+          content: assistantContent,
+          isStreaming: false,
         };
+        
+        setMessages((prevMessages) => {
+          const newMessages = [...prevMessages];
+          const lastMessage = newMessages[newMessages.length - 1];
+          if (lastMessage.role === 'assistant' && lastMessage.isStreaming) {
+            newMessages[newMessages.length - 1] = finalMessage;
+          }
+          return newMessages;
+        });
 
-        setMessages((prevMessages) => [...prevMessages, aiMessage]);
-
+        // Save final message to DB
         await fetch(`/api/chat/${currentChatId}/messages`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(aiMessage),
+          body: JSON.stringify(finalMessage),
         });
 
         return { newChatId };
@@ -142,7 +171,7 @@ export default function useConversation(chatId: string | undefined) {
         setLoading(false);
       }
     },
-    [chatId, messages, selectedModel]
+    [chatId, messages, selectedModel, streamChat]
   );
 
   return {
@@ -153,5 +182,7 @@ export default function useConversation(chatId: string | undefined) {
     setSelectedModelId,
     selectedModel,
     availableModels: getActiveModels(),
+    isStreaming,
+    cancelStream,
   };
 }

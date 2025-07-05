@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronUp, Brain, User, Bot, ClipboardCopy } from "lucide-react";
+import { ChevronDown, ChevronUp, Brain, User, Bot, ClipboardCopy, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import clsx from "clsx";
@@ -8,9 +8,10 @@ import clsx from "clsx";
 interface ConversationCompProps {
   role: 'user' | 'assistant';
   content: string;
+  isStreaming?: boolean;
 }
 
-function ConversationComp({ role, content }: ConversationCompProps) {
+function ConversationComp({ role, content, isStreaming = false }: ConversationCompProps) {
   const [copied, setCopied] = useState<boolean>(false);
   const isUser = role === 'user';
 
@@ -54,6 +55,15 @@ function ConversationComp({ role, content }: ConversationCompProps) {
           <span className="font-medium">
             {isUser ? "You" : "AI Assistant"}
           </span>
+          {isStreaming && !isUser && (
+            <>
+              <span>•</span>
+              <div className="flex items-center gap-1">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span>Streaming...</span>
+              </div>
+            </>
+          )}
           <span>•</span>
           <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
         </div>
@@ -65,7 +75,6 @@ function ConversationComp({ role, content }: ConversationCompProps) {
             ? "rounded-br-sm bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20" 
             : "rounded-bl-sm"
         )}>
-          {/* This component no longer has special parsing for 'think' process */}
           {content && (
             <div className={clsx(
               "prose prose-sm max-w-none",
@@ -78,7 +87,16 @@ function ConversationComp({ role, content }: ConversationCompProps) {
               "prose-blockquote:border-[var(--primary-color)]",
               "prose-blockquote:text-[var(--text-secondary)]"
             )}>
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+              <div className="relative">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+                {isStreaming && !isUser && (
+                  <motion.span
+                    animate={{ opacity: [0.5, 1, 0.5] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                    className="inline-block w-2 h-4 bg-[var(--primary-color)] ml-1"
+                  />
+                )}
+              </div>
               <button
                 onClick={() => handleCopy(content)}
                 className="mt-2 text-xs text-[var(--text-secondary)] hover:text-[var(--primary-color)] flex items-center gap-1"

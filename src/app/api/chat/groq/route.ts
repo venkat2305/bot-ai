@@ -33,10 +33,32 @@ export async function POST(req: NextRequest) {
     const response = await groq.chat.completions.create({
       model,
       messages,
-      stream: false,
+      stream: true,
     });
 
-    return NextResponse.json(response);
+    const encoder = new TextEncoder();
+    const readable = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of response) {
+            const data = `data: ${JSON.stringify(chunk)}\n\n`;
+            controller.enqueue(encoder.encode(data));
+          }
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+          controller.close();
+        } catch (error) {
+          controller.error(error);
+        }
+      },
+    });
+
+    return new Response(readable, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    });
   } catch (error) {
     console.error('Error with Groq chat completion:', error);
     return NextResponse.json({ error: 'Failed to get chat completion' }, { status: 500 });
