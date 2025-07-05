@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronUp, Brain, User, Bot, ClipboardCopy, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -9,10 +9,23 @@ interface ConversationCompProps {
   role: 'user' | 'assistant';
   content: string;
   isStreaming?: boolean;
+  isReasoningModel?: boolean;
+  reasoningContent?: string;
+  mainContent?: string;
+  hasActiveReasoning?: boolean;
 }
 
-function ConversationComp({ role, content, isStreaming = false }: ConversationCompProps) {
+function ConversationComp({ 
+  role, 
+  content, 
+  isStreaming = false, 
+  isReasoningModel = false,
+  reasoningContent: propReasoningContent,
+  mainContent: propMainContent,
+  hasActiveReasoning = false
+}: ConversationCompProps) {
   const [copied, setCopied] = useState<boolean>(false);
+  const [showReasoning, setShowReasoning] = useState<boolean>(false);
   const isUser = role === 'user';
 
   const handleCopy = (text: string): void => {
@@ -22,6 +35,43 @@ function ConversationComp({ role, content, isStreaming = false }: ConversationCo
       setCopied(false);
     }, 3000);
   };
+
+  // Use provided content or fallback to parsing for non-streaming messages
+  const getContentSections = () => {
+    if (propReasoningContent !== undefined || propMainContent !== undefined) {
+      // Use provided props (for streaming messages)
+      return {
+        reasoningContent: propReasoningContent || '',
+        mainContent: propMainContent || ''
+      };
+    } else if (!isReasoningModel || isUser) {
+      // No reasoning model or user message
+      return { mainContent: content, reasoningContent: null };
+    } else {
+      // Fallback: parse completed content for reasoning tags
+      const thinkRegex = /<think>([\s\S]*?)<\/think>/g;
+      const reasoningMatches = [];
+      let match;
+      
+      while ((match = thinkRegex.exec(content)) !== null) {
+        reasoningMatches.push(match[1].trim());
+      }
+
+      const mainContent = content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+      const reasoningContent = reasoningMatches.length > 0 ? reasoningMatches.join('\n\n') : null;
+
+      return { mainContent, reasoningContent };
+    }
+  };
+
+  const { mainContent, reasoningContent } = getContentSections();
+
+  // Auto-expand reasoning when actively streaming reasoning content
+  React.useEffect(() => {
+    if (hasActiveReasoning && reasoningContent) {
+      setShowReasoning(true);
+    }
+  }, [hasActiveReasoning, reasoningContent]);
 
   return (
     <motion.div
@@ -75,7 +125,59 @@ function ConversationComp({ role, content, isStreaming = false }: ConversationCo
             ? "rounded-br-sm bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20" 
             : "rounded-bl-sm"
         )}>
-          {content && (
+          {/* Reasoning Section */}
+          {reasoningContent && (
+            <div className="mb-4">
+              <button
+                onClick={() => setShowReasoning(!showReasoning)}
+                className="flex items-center gap-2 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--primary-color)] transition-colors"
+              >
+                <Brain className="w-4 h-4" />
+                <span>Reasoning Process</span>
+                {showReasoning ? (
+                  <ChevronUp className="w-4 h-4" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" />
+                )}
+              </button>
+              
+              <AnimatePresence>
+                {showReasoning && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="mt-3 p-3 rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border-color)]"
+                  >
+                    <div className={clsx(
+                      "prose prose-sm max-w-none",
+                      "prose-headings:text-[var(--text-secondary)]",
+                      "prose-p:text-[var(--text-secondary)]",
+                      "prose-strong:text-[var(--text-secondary)]",
+                      "prose-code:text-[var(--primary-color)]",
+                      "prose-pre:bg-[var(--card-bg)]",
+                      "prose-pre:border prose-pre:border-[var(--border-color)]"
+                    )}>
+                      <div className="relative">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{reasoningContent}</ReactMarkdown>
+                        {isStreaming && hasActiveReasoning && !isUser && (
+                          <motion.span
+                            animate={{ opacity: [0.5, 1, 0.5] }}
+                            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                            className="inline-block w-2 h-4 bg-[var(--primary-color)] ml-1"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
+          {/* Main Content */}
+          {(mainContent || (!reasoningContent && content)) && (
             <div className={clsx(
               "prose prose-sm max-w-none",
               "prose-headings:text-[var(--text-color)]",
@@ -88,8 +190,8 @@ function ConversationComp({ role, content, isStreaming = false }: ConversationCo
               "prose-blockquote:text-[var(--text-secondary)]"
             )}>
               <div className="relative">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
-                {isStreaming && !isUser && (
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{mainContent || content}</ReactMarkdown>
+                {isStreaming && !hasActiveReasoning && !isUser && (
                   <motion.span
                     animate={{ opacity: [0.5, 1, 0.5] }}
                     transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}

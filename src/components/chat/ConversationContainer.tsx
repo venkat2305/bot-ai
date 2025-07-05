@@ -243,6 +243,10 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
                   role={message.role}
                   content={message.content}
                   isStreaming={message.isStreaming}
+                  isReasoningModel={selectedModel?.capabilities.isReasoningModel}
+                  reasoningContent={message.reasoningContent}
+                  mainContent={message.mainContent}
+                  hasActiveReasoning={message.hasActiveReasoning}
                 />
               ))}
             </motion.div>

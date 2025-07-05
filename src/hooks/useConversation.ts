@@ -6,6 +6,9 @@ export interface Message {
   role: 'user' | 'assistant';
   content: string;
   isStreaming?: boolean;
+  reasoningContent?: string;
+  mainContent?: string;
+  hasActiveReasoning?: boolean;
 }
 
 export default function useConversation(chatId: string | undefined) {
@@ -120,17 +123,105 @@ export default function useConversation(chatId: string | undefined) {
           role: 'assistant',
           content: '',
           isStreaming: true,
+          reasoningContent: '',
+          mainContent: '',
+          hasActiveReasoning: false,
         };
         setMessages((prevMessages) => [...prevMessages, streamingMessage]);
 
-        let assistantContent = '';
+        let fullContent = '';
+        let isInsideThink = false;
+        let reasoningBuffer = '';
+        let mainBuffer = '';
+        let pendingContent = '';
+        
+        const isReasoningModel = selectedModel?.capabilities.isReasoningModel;
+
         await streamChat(allMessages, selectedModel, (chunk) => {
-          assistantContent += chunk;
+          fullContent += chunk;
+          
+          if (!isReasoningModel) {
+            // For non-reasoning models, just update content normally
+            setMessages((prevMessages) => {
+              const newMessages = [...prevMessages];
+              const lastMessage = newMessages[newMessages.length - 1];
+              if (lastMessage.role === 'assistant' && lastMessage.isStreaming) {
+                lastMessage.content = fullContent;
+              }
+              return newMessages;
+            });
+            return;
+          }
+
+          pendingContent += chunk;
+
+          // Process the pending content for <think> tags
+          let remainingContent = pendingContent;
+
+          while (remainingContent.length > 0) {
+            if (!isInsideThink) {
+              // Look for opening <think> tag
+              const thinkStart = remainingContent.indexOf('<think>');
+              if (thinkStart !== -1) {
+                // Add content before <think> to main content
+                const beforeThink = remainingContent.substring(0, thinkStart);
+                mainBuffer += beforeThink;
+                
+                // Move past the <think> tag
+                remainingContent = remainingContent.substring(thinkStart + 7);
+                isInsideThink = true;
+              } else {
+                // Check if we have a partial <think> tag at the end
+                const partialStart = remainingContent.lastIndexOf('<');
+                if (partialStart !== -1 && remainingContent.substring(partialStart).match(/^<t?h?i?n?k?$/)) {
+                  // Keep potential partial tag for next chunk
+                  mainBuffer += remainingContent.substring(0, partialStart);
+                  pendingContent = remainingContent.substring(partialStart);
+                  break;
+                } else {
+                  // No <think> found, add all to main content
+                  mainBuffer += remainingContent;
+                  pendingContent = '';
+                  break;
+                }
+              }
+            } else {
+              // Look for closing </think> tag
+              const thinkEnd = remainingContent.indexOf('</think>');
+              if (thinkEnd !== -1) {
+                // Add content before </think> to reasoning
+                const insideThink = remainingContent.substring(0, thinkEnd);
+                reasoningBuffer += insideThink;
+                
+                // Move past the </think> tag
+                remainingContent = remainingContent.substring(thinkEnd + 8);
+                isInsideThink = false;
+              } else {
+                // Check if we have a partial </think> tag at the end
+                const partialEnd = remainingContent.lastIndexOf('<');
+                if (partialEnd !== -1 && remainingContent.substring(partialEnd).match(/^<\/?t?h?i?n?k?>?$/)) {
+                  // Keep potential partial tag for next chunk
+                  reasoningBuffer += remainingContent.substring(0, partialEnd);
+                  pendingContent = remainingContent.substring(partialEnd);
+                  break;
+                } else {
+                  // No </think> found yet, add all to reasoning and wait for more
+                  reasoningBuffer += remainingContent;
+                  pendingContent = '';
+                  break;
+                }
+              }
+            }
+          }
+
           setMessages((prevMessages) => {
             const newMessages = [...prevMessages];
             const lastMessage = newMessages[newMessages.length - 1];
             if (lastMessage.role === 'assistant' && lastMessage.isStreaming) {
-              lastMessage.content = assistantContent;
+              lastMessage.content = fullContent;
+              lastMessage.reasoningContent = reasoningBuffer;
+              lastMessage.mainContent = mainBuffer;
+              lastMessage.hasActiveReasoning = isInsideThink;
             }
             return newMessages;
           });
@@ -139,8 +230,13 @@ export default function useConversation(chatId: string | undefined) {
         // Finalize the streaming message
         const finalMessage: Message = {
           role: 'assistant',
-          content: assistantContent,
+          content: fullContent,
           isStreaming: false,
+          ...(isReasoningModel && {
+            reasoningContent: reasoningBuffer,
+            mainContent: mainBuffer,
+            hasActiveReasoning: false,
+          }),
         };
         
         setMessages((prevMessages) => {
