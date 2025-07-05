@@ -71,7 +71,11 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
   const handleSend = async (question: string) => {
     const result = await sendMessage(question);
     if (result?.newChatId) {
-      router.replace(`/chat/${result.newChatId}`);
+      if (typeof window !== 'undefined') {
+        window.history.replaceState(null, '', `/chat/${result.newChatId}`);
+      } else {
+        router.replace(`/chat/${result.newChatId}`);
+      }
     }
   };
 
