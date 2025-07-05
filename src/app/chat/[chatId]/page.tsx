@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import SideBar from "@/components/chat/SideBar";
 import ConversationContainer from "@/components/chat/ConversationContainer";
@@ -16,17 +16,18 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
   const [currentChatId, setCurrentChatId] = useState<string | undefined>(resolvedParams.chatId);
   const [conversationKey, setConversationKey] = useState<number>(Date.now());
+  const previousParamRef = useRef<string | undefined>(resolvedParams.chatId);
 
   useEffect(() => {
-    const previousChatId = currentChatId;
-    setCurrentChatId(resolvedParams.chatId);
-    
-    // Only update conversationKey if we're switching to a different existing chat
-    // Don't update when transitioning from 'new' to a real chat ID (same conversation)
-    if (previousChatId && previousChatId !== 'new' && resolvedParams.chatId !== previousChatId) {
-      setConversationKey(Date.now());
+    const previousChatId = previousParamRef.current;
+    if (resolvedParams.chatId !== previousChatId) {
+      setCurrentChatId(resolvedParams.chatId);
+      if (previousChatId && previousChatId !== 'new' && resolvedParams.chatId !== previousChatId) {
+        setConversationKey(Date.now());
+      }
+      previousParamRef.current = resolvedParams.chatId;
     }
-  }, [resolvedParams.chatId, currentChatId]);
+  }, [resolvedParams.chatId]);
 
   const toggleTheme = (): void => {
     setThemeMode((prev) => (prev === "light" ? "dark" : "light"));
@@ -72,7 +73,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
             transition={{ duration: 0.3 }}
             className="h-full"
           >
-            <ConversationContainer chatId={currentChatId} />
+            <ConversationContainer chatId={currentChatId} onNewChatId={setCurrentChatId} />
           </motion.div>
         </AnimatePresence>
       </div>
