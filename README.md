@@ -1,13 +1,13 @@
-The issue was that router.replace() in ConversationContainer.tsx:75 was causing a
-  page reload when transitioning from /chat/new to /chat/[chatId]. Using
-  window.history.replaceState() instead updates the URL without triggering a page reload.
-
-
-window.history.replaceState(null, '', `/chat/${result.newChatId}`);
-instead of useRouter we used the above. 
 # Bot AI - Next.js Application
 
-This is an AI chatbot application built with Next.js, featuring multiple AI model integrations including Groq, OpenRouter, and Perplexity models.
+This is an AI chatbot application built with Next.js, featuring multiple AI model
+integrations including Groq, OpenRouter, and Perplexity models.
+
+## Avoiding Page Reloads when Starting a Chat
+
+When sending the first message in a new conversation, the application updates the
+URL using `window.history.replaceState` instead of `router.replace`. This prevents
+the page from reloading when transitioning from `/chat/new` to `/chat/[chatId]`.
 
 ## Features
 
