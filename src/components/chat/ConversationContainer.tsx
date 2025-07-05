@@ -9,10 +9,10 @@ import siteIcon from "../../assets/site-icon.png";
 import sampleData from "../../assets/sampleData.json";
 import useConversation from "../../hooks/useConversation";
 import clsx from "clsx";
-import { useRouter } from 'next/navigation';
 
 interface ConversationContainerProps {
   chatId?: string;
+  onNewChatId?: (chatId: string) => void;
 }
 
 interface ConversationStarter {
@@ -33,7 +33,7 @@ interface CustomSelectProps {
   placeholder?: string;
 }
 
-function ConversationContainer({ chatId }: ConversationContainerProps) {
+function ConversationContainer({ chatId, onNewChatId }: ConversationContainerProps) {
   const {
     messages,
     loading,
@@ -45,7 +45,6 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
     isStreaming,
     cancelStream,
   } = useConversation(chatId);
-  const router = useRouter();
 
   const [conversationStarters, setConversationStarters] = React.useState<ConversationStarter[]>([]);
 
@@ -71,7 +70,10 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
   const handleSend = async (question: string) => {
     const result = await sendMessage(question);
     if (result?.newChatId) {
-      router.replace(`/chat/${result.newChatId}`);
+      window.history.replaceState(null, '', `/chat/${result.newChatId}`);
+      if (onNewChatId) {
+        onNewChatId(result.newChatId);
+      }
     }
   };
 
