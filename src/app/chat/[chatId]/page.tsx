@@ -18,12 +18,24 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
   const [conversationKey, setConversationKey] = useState<number>(Date.now());
 
   useEffect(() => {
+    if (resolvedParams.chatId === "new") {
+      if (currentChatId !== "new") {
+        setCurrentChatId("new");
+        setConversationKey(Date.now());
+      }
+      return;
+    }
+
     const previousChatId = currentChatId;
-    setCurrentChatId(resolvedParams.chatId);
-    
-    // Only update conversationKey if we're switching to a different existing chat
-    // Don't update when transitioning from 'new' to a real chat ID (same conversation)
-    if (previousChatId && previousChatId !== 'new' && resolvedParams.chatId !== previousChatId) {
+    if (resolvedParams.chatId !== currentChatId) {
+      setCurrentChatId(resolvedParams.chatId);
+    }
+
+    if (
+      previousChatId &&
+      previousChatId !== "new" &&
+      resolvedParams.chatId !== previousChatId
+    ) {
       setConversationKey(Date.now());
     }
   }, [resolvedParams.chatId, currentChatId]);
@@ -72,7 +84,10 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
             transition={{ duration: 0.3 }}
             className="h-full"
           >
-            <ConversationContainer chatId={currentChatId} />
+            <ConversationContainer
+              chatId={currentChatId}
+              onNewChatId={setCurrentChatId}
+            />
           </motion.div>
         </AnimatePresence>
       </div>
