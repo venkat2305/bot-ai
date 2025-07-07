@@ -1,5 +1,6 @@
-import OpenAI from "openai";
-import { NextRequest, NextResponse } from 'next/server';
+import { streamText } from 'ai';
+import { createGroq } from '@ai-sdk/groq';
+import { NextRequest } from 'next/server';
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -15,35 +16,51 @@ export async function POST(req: NextRequest) {
   const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
   if (!GROQ_API_KEY) {
-    return NextResponse.json({ error: 'Groq API key not configured' }, { status: 500 });
+    return new Response(JSON.stringify({ error: 'Groq API key not configured' }), { 
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 
   try {
     const { messages, model }: ChatRequest = await req.json();
 
     if (!messages || !model) {
-      return NextResponse.json({ error: 'Messages and model are required' }, { status: 400 });
+      return new Response(JSON.stringify({ error: 'Messages and model are required' }), { 
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
-    const groq = new OpenAI({
+    const groq = createGroq({
       apiKey: GROQ_API_KEY,
-      baseURL: "https://api.groq.com/openai/v1",
     });
 
-    const response = await groq.chat.completions.create({
-      model,
+    const result = streamText({
+      model: groq(model),
       messages,
-      stream: true,
     });
 
+    // Convert AI SDK stream to OpenAI format that frontend expects
     const encoder = new TextEncoder();
-    const readable = new ReadableStream({
+    const stream = new ReadableStream({
       async start(controller) {
         try {
-          for await (const chunk of response) {
-            const data = `data: ${JSON.stringify(chunk)}\n\n`;
+          for await (const chunk of result.textStream) {
+            const openAIChunk = {
+              choices: [
+                {
+                  delta: {
+                    content: chunk,
+                  },
+                },
+              ],
+            };
+            
+            const data = `data: ${JSON.stringify(openAIChunk)}\n\n`;
             controller.enqueue(encoder.encode(data));
           }
+          
           controller.enqueue(encoder.encode('data: [DONE]\n\n'));
           controller.close();
         } catch (error) {
@@ -52,7 +69,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return new Response(readable, {
+    return new Response(stream, {
       headers: {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
@@ -61,6 +78,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error('Error with Groq chat completion:', error);
-    return NextResponse.json({ error: 'Failed to get chat completion' }, { status: 500 });
+    return new Response(JSON.stringify({ error: 'Failed to get chat completion' }), { 
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }
