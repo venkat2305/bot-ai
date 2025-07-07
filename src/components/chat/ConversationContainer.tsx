@@ -71,7 +71,8 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
   const handleSend = async (question: string) => {
     const result = await sendMessage(question);
     if (result?.newChatId) {
-      router.replace(`/chat/${result.newChatId}`);
+      // Update the URL without triggering a full page reload
+      window.history.replaceState(null, '', `/chat/${result.newChatId}`);
     }
   };
 
@@ -209,7 +210,7 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
                   How Can I Help You Today?
                 </h2>
                 <p className="text-lg mb-4" style={{ color: "var(--text-secondary)" }}>
-                  Ask me anything, and I'll provide detailed, helpful responses
+                  Ask me anything, and I&apos;ll provide detailed, helpful responses
                 </p>
                 {selectedModel && (
                   <div className="flex items-center justify-center gap-2 text-sm" style={{ color: "var(--text-secondary)" }}>
