@@ -16,6 +16,7 @@ import {
 import clsx from "clsx";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { v4 as uuidv4 } from "uuid";
 
 interface Chat {
   uuid: string;
@@ -109,10 +110,15 @@ function SideBar({
   const router = useRouter();
 
   useEffect(() => {
+    const handleChatCreated = () => loadRecentChats();
     if (status === 'authenticated') {
       loadRecentChats();
+      window.addEventListener('chat-created', handleChatCreated);
     }
-  }, [status, currentChatId]);
+    return () => {
+      window.removeEventListener('chat-created', handleChatCreated);
+    };
+  }, [status]);
 
   const loadRecentChats = async (): Promise<void> => {
     try {
@@ -129,7 +135,7 @@ function SideBar({
   };
 
   const handleNewChatClick = (): void => {
-    router.push('/chat/new');
+    router.push(`/chat/${uuidv4()}`);
   };
 
   const handleChatSelect = (chat: Chat): void => {

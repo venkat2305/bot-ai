@@ -34,19 +34,13 @@ export default function useConversation(chatId: string | undefined) {
 
   useEffect(() => {
     const fetchMessages = async () => {
-      if (!chatId || chatId === 'new') {
+      if (!chatId || chatId === 'new') { // Keep 'new' check for safety during transition
         setMessages([]);
         previousChatIdRef.current = chatId;
         return;
       }
-      
-      // Don't fetch if we're transitioning from 'new' to a real chat ID (same conversation)
-      if (previousChatIdRef.current === 'new' && messages.length > 0) {
-        previousChatIdRef.current = chatId;
-        return;
-      }
-      
-      // Only fetch if this is a different chat
+
+      // We only want to fetch if the chat ID *actually* changes.
       if (previousChatIdRef.current !== chatId) {
         setLoading(true);
         try {
@@ -55,8 +49,13 @@ export default function useConversation(chatId: string | undefined) {
             const data = await response.json();
             setMessages(data);
           } else {
-            console.error('Failed to fetch messages');
-            setMessages([]);
+            // A 404 is expected for a new chat, which is fine.
+            if (response.status === 404) {
+               setMessages([]);
+            } else {
+              console.error('Failed to fetch messages');
+              setMessages([]);
+            }
           }
         } catch (error) {
           console.error('Error fetching messages:', error);
@@ -65,7 +64,6 @@ export default function useConversation(chatId: string | undefined) {
           setLoading(false);
         }
       }
-      
       previousChatIdRef.current = chatId;
     };
 
@@ -74,44 +72,38 @@ export default function useConversation(chatId: string | undefined) {
 
   const sendMessage = useCallback(
     async (input: string) => {
-      let currentChatId = chatId;
-      let newChatId: string | null = null;
+      const currentChatId = chatId;
 
       if (!input.trim()) return;
       if (!selectedModel) {
         console.error('No model selected');
         return;
       }
+      if (!currentChatId || currentChatId === 'new') {
+        console.error('Invalid chatId for sending message');
+        return;
+      }
+      
+      const isNewChat = messages.length === 0;
 
       const userMessage: Message = { role: 'user', content: input };
       setMessages((prevMessages) => [...prevMessages, userMessage]);
       setLoading(true);
 
       try {
-        if (!currentChatId || currentChatId === 'new') {
-          const createResponse = await fetch('/api/chat/create', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title: input.substring(0, 30) }),
-          });
-          if (!createResponse.ok) {
-            throw new Error('Failed to create chat');
-          }
-          const newChat = await createResponse.json();
-          currentChatId = newChat.uuid;
-          newChatId = newChat.uuid;
-        }
-
-        if (!currentChatId) {
-          throw new Error('No valid chat ID to send message to.');
-        }
-
         // Save user message to DB
         await fetch(`/api/chat/${currentChatId}/messages`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(userMessage),
+          body: JSON.stringify({
+            ...userMessage,
+            title: isNewChat ? input.substring(0, 50) : undefined
+          }),
         });
+
+        if (isNewChat) {
+          window.dispatchEvent(new CustomEvent('chat-created'));
+        }
 
         const allMessages = [
           ...messages,
@@ -255,7 +247,6 @@ export default function useConversation(chatId: string | undefined) {
           body: JSON.stringify(finalMessage),
         });
 
-        return { newChatId };
       } catch (error) {
         console.error('Error sending message:', error);
         const errorMessage: Message = {

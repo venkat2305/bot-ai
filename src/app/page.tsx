@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { v4 as uuidv4 } from 'uuid';
 
 export default function Home() {
   const router = useRouter();
@@ -17,7 +18,7 @@ export default function Home() {
       return;
     }
     if (status === 'authenticated') {
-      router.replace(`/chat/new`);
+      router.replace(`/chat/${uuidv4()}`);
     }
   }, [status, router]);
 

@@ -52,7 +52,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { role, content } = await req.json();
+    const { role, content, title } = await req.json();
 
     if (!role || !content) {
       return NextResponse.json(
@@ -63,13 +63,26 @@ export async function POST(
 
     await dbConnect();
 
-    const chat = await Chat.findOne({
+    let chat = await Chat.findOne({
       uuid: chatId,
       userId: session.user.id,
     });
 
     if (!chat) {
-      return NextResponse.json({ error: 'Chat not found' }, { status: 404 });
+      // If chat is not found and a title is provided, create a new chat.
+      // This happens on the first message of a new conversation.
+      if (title) {
+        const newChat = new Chat({
+          userId: session.user.id,
+          uuid: chatId,
+          title: title,
+        });
+        await newChat.save();
+        chat = newChat;
+      } else {
+        // If no chat and no title, it's an error (e.g., assistant message for a non-existent chat).
+        return NextResponse.json({ error: 'Chat not found and no title provided for creation' }, { status: 404 });
+      }
     }
 
     const newMessage = new Message({

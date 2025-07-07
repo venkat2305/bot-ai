@@ -69,10 +69,7 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
   const [inputText, setInputText] = React.useState<string>("");
 
   const handleSend = async (question: string) => {
-    const result = await sendMessage(question);
-    if (result?.newChatId) {
-      router.replace(`/chat/${result.newChatId}`);
-    }
+    await sendMessage(question);
   };
 
   const getCapabilityIcons = (capabilities: any) => {
