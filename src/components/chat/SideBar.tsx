@@ -30,35 +30,54 @@ interface SideBarProps {
   collapsed: boolean;
   onToggleCollapse: () => void;
   currentChatId?: string;
-  onOpenDeleteConfirm: (chatId: string) => void; // New prop
-  refreshChatsTrigger?: number; // New prop
+  onOpenDeleteConfirm: (chatId: string) => void;
+  refreshChatsTrigger?: number;
 }
 
 function UserAuth({ collapsed }: { collapsed: boolean }) {
   const { data: session } = useSession();
 
   if (session) {
+    if (collapsed) {
+      // When collapsed, only show the user avatar as a small compact element
+      return (
+        <motion.div
+          className="flex items-center justify-center p-2 rounded-lg transition-all duration-200 w-full bg-[var(--bg-tertiary)] hover:bg-[var(--bubble-bg)] border border-[var(--border-color)]"
+          whileHover={{ scale: 1.05 }}
+          title={session.user?.name || "User"}
+        >
+          {session.user?.image ? (
+            <img
+              src={session.user.image}
+              alt={session.user.name || "User"}
+              className="w-5 h-5 rounded-full object-cover"
+            />
+          ) : (
+            <User className="w-5 h-5 rounded-full bg-gray-300 p-1" />
+          )}
+        </motion.div>
+      );
+    }
+
     return (
       <div className="flex items-center gap-3 p-3 rounded-xl transition-all duration-200 w-full bg-[var(--bg-tertiary)] hover:bg-[var(--bubble-bg)] border border-[var(--border-color)]">
         {session.user?.image ? (
           <img
             src={session.user.image}
             alt={session.user.name || "User"}
-            className="w-8 h-8 rounded-full"
+            className="w-8 h-8 rounded-full object-cover"
           />
         ) : (
           <User className="w-8 h-8 rounded-full bg-gray-300 p-1" />
         )}
-        {!collapsed && (
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate" style={{ color: "var(--text-color)" }}>
-              {session.user?.name}
-            </p>
-            <p className="text-xs truncate mt-1" style={{ color: "var(--text-muted)" }}>
-              {session.user?.email}
-            </p>
-          </div>
-        )}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium truncate" style={{ color: "var(--text-color)" }}>
+            {session.user?.name}
+          </p>
+          <p className="text-xs truncate mt-1" style={{ color: "var(--text-muted)" }}>
+            {session.user?.email}
+          </p>
+        </div>
         <motion.button
           onClick={() => signOut()}
           whileHover={{ scale: 1.1 }}
@@ -80,11 +99,11 @@ function UserAuth({ collapsed }: { collapsed: boolean }) {
       className={clsx(
         "flex items-center gap-3 p-3 rounded-xl transition-all duration-200 w-full",
         "bg-[var(--bg-tertiary)] hover:bg-[var(--bubble-bg)] border border-[var(--border-color)]",
-        collapsed && "justify-center"
+        collapsed && "justify-center p-3"
       )}
       title={collapsed ? "Sign In" : undefined}
     >
-      <LogIn className="w-5 h-5 flex-shrink-0" />
+      <LogIn className={clsx("flex-shrink-0", collapsed ? "w-5 h-5" : "w-5 h-5")} />
       {!collapsed && (
         <motion.span
           initial={{ opacity: 0, width: 0 }}
@@ -122,7 +141,7 @@ function SideBar({
     return () => {
       window.removeEventListener('chat-created', handleChatCreated);
     };
-  }, [status, refreshChatsTrigger]); // Add refreshChatsTrigger to dependencies
+  }, [status, refreshChatsTrigger]);
 
   const loadRecentChats = async (): Promise<void> => {
     if (status === "authenticated") {
@@ -153,7 +172,7 @@ function SideBar({
     chatId: string
   ): Promise<void> => {
     e.stopPropagation();
-    onOpenDeleteConfirm(chatId); // Use new prop
+    onOpenDeleteConfirm(chatId);
   };
 
   const formatDate = (dateString: string): string => {
@@ -174,7 +193,11 @@ function SideBar({
   };
 
   return (
-    <div className="flex flex-col min-h-screen p-4 gap-4">
+    <div className={clsx(
+      "flex flex-col min-h-screen gap-4 transition-all duration-300",
+      collapsed ? "p-2" : "p-4"
+    )}>
+      {/* Header */}
       <div className="flex items-center justify-between">
         {!collapsed && (
           <motion.div
@@ -191,25 +214,29 @@ function SideBar({
         )}
         <button
           onClick={onToggleCollapse}
-          className="p-2 rounded-lg transition-all duration-200 hover:bg-[var(--bg-tertiary)]"
+          className={clsx(
+            "rounded-lg transition-all duration-200 hover:bg-[var(--bg-tertiary)]",
+            collapsed ? "p-3" : "p-3"
+          )}
           style={{ color: "var(--text-secondary)" }}
         >
-          <Menu className="w-5 h-5" />
+          <Menu className={clsx(collapsed ? "w-5 h-5" : "w-5 h-5")} />
         </button>
       </div>
 
+      {/* New Chat Button */}
       <motion.button
         onClick={handleNewChatClick}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         className={clsx(
-          "flex items-center gap-3 p-3 rounded-xl transition-all duration-200 text-left w-full",
+          "flex items-center gap-3 rounded-xl transition-all duration-200 text-left w-full",
           "bg-gradient-to-r from-[var(--primary-color)] to-[var(--primary-hover)] text-white shadow-lg",
-          collapsed && "justify-center"
+          collapsed ? "justify-center p-3" : "p-3"
         )}
         title={collapsed ? "New Chat" : undefined}
       >
-        <Plus className="w-5 h-5 flex-shrink-0" />
+        <Plus className={clsx("flex-shrink-0", collapsed ? "w-5 h-5" : "w-5 h-5")} />
         {!collapsed && (
           <motion.span
             initial={{ opacity: 0, width: 0 }}
@@ -222,6 +249,7 @@ function SideBar({
         )}
       </motion.button>
 
+      {/* Recent Chats - Only show when not collapsed */}
       {!collapsed && recentChats.length > 0 && (
         <div className="flex-1 min-h-0 flex flex-col">
           <div className="flex items-center gap-2 mb-3 px-2">
@@ -285,48 +313,33 @@ function SideBar({
         </div>
       )}
 
+      {/* Bottom Section */}
       <div className="mt-auto flex flex-col gap-2">
-        <div className="flex flex-col gap-1">
-          {!collapsed && recentChats.length > 5 && (
-            <div className="flex-1 min-h-0 flex flex-col">
-              <div className="flex items-center gap-2 mb-3 px-2">
-                <Clock
-                  className="w-4 h-4"
-                  style={{ color: 'var(--text-secondary)' }}
-                />
-                <span
-                  className="text-xs font-medium"
-                  style={{ color: 'var(--text-secondary)' }}
-                >
-                  Recent Chats
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-
+        {/* User Authentication */}
         <UserAuth collapsed={collapsed} />
 
-        <div className="flex items-center justify-between">
-          <motion.button
-            onClick={onToggleTheme}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            className="flex items-center gap-2 p-2 rounded-lg transition-all duration-200 hover:bg-[var(--bg-tertiary)]"
-            title={collapsed ? 'Toggle theme' : undefined}
-          >
-            {themeMode === 'light' ? (
-              <Sun className="w-5 h-5" />
-            ) : (
-              <Moon className="w-5 h-5" />
-            )}
-            {!collapsed && (
-              <span className="text-sm" style={{ color: 'var(--text-color)' }}>
-                {themeMode.charAt(0).toUpperCase() + themeMode.slice(1)}
-              </span>
-            )}
-          </motion.button>
-        </div>
+        {/* Theme Toggle */}
+        <motion.button
+          onClick={onToggleTheme}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className={clsx(
+            "flex items-center gap-2 rounded-lg transition-all duration-200 hover:bg-[var(--bg-tertiary)] w-full",
+            collapsed ? "justify-center p-3" : "p-2"
+          )}
+          title={collapsed ? 'Toggle theme' : undefined}
+        >
+          {themeMode === 'light' ? (
+            <Sun className={clsx(collapsed ? "w-5 h-5" : "w-5 h-5")} />
+          ) : (
+            <Moon className={clsx(collapsed ? "w-5 h-5" : "w-5 h-5")} />
+          )}
+          {!collapsed && (
+            <span className="text-sm" style={{ color: 'var(--text-color)' }}>
+              {themeMode.charAt(0).toUpperCase() + themeMode.slice(1)}
+            </span>
+          )}
+        </motion.button>
       </div>
     </div>
   );
