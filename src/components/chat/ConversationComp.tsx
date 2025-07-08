@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, easeInOut } from "framer-motion";
 import {
   ChevronDown,
   ChevronUp,
@@ -40,13 +40,13 @@ const reasoningVariants = {
 };
 
 const cursorVariants = {
-  animate: { 
-    opacity: [0.5, 1, 0.5] 
+  animate: {
+    opacity: [0.5, 1, 0.5],
   },
   transition: {
     duration: 1.5,
     repeat: Infinity,
-    ease: "easeInOut",
+    ease: easeInOut,
   },
 };
 
@@ -70,11 +70,11 @@ const Avatar: React.FC<{ isUser: boolean }> = ({ isUser }) => (
   </div>
 );
 
-const CopyButton: React.FC<{ content: string; copied: boolean; onCopy: () => void }> = ({
-  content,
-  copied,
-  onCopy,
-}) => (
+const CopyButton: React.FC<{
+  content: string;
+  copied: boolean;
+  onCopy: () => void;
+}> = ({ content, copied, onCopy }) => (
   <button
     onClick={onCopy}
     className="mt-2 text-xs text-[var(--text-secondary)] hover:text-[var(--primary-color)] flex items-center gap-1 transition-colors"
@@ -96,7 +96,9 @@ const CopyButton: React.FC<{ content: string; copied: boolean; onCopy: () => voi
 
 const StreamingCursor: React.FC = () => (
   <motion.span
-    {...cursorVariants}
+    variants={cursorVariants}
+    animate="animate"
+    transition={cursorVariants.transition}
     className="inline-block w-2 h-4 bg-[var(--primary-color)] ml-1"
   />
 );
@@ -108,7 +110,14 @@ const ReasoningSection: React.FC<{
   isStreaming: boolean;
   hasActiveReasoning: boolean;
   isUser: boolean;
-}> = ({ reasoningContent, showReasoning, onToggle, isStreaming, hasActiveReasoning, isUser }) => (
+}> = ({
+  reasoningContent,
+  showReasoning,
+  onToggle,
+  isStreaming,
+  hasActiveReasoning,
+  isUser,
+}) => (
   <div className="mb-4">
     <button
       onClick={onToggle}
@@ -138,7 +147,9 @@ const ReasoningSection: React.FC<{
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {reasoningContent}
               </ReactMarkdown>
-              {isStreaming && hasActiveReasoning && !isUser && <StreamingCursor />}
+              {isStreaming && hasActiveReasoning && !isUser && (
+                <StreamingCursor />
+              )}
             </div>
           </div>
         </motion.div>
@@ -157,15 +168,13 @@ const MainContent: React.FC<{
 }> = ({ content, isStreaming, hasActiveReasoning, isUser, onCopy, copied }) => (
   <div className="prose prose-sm max-w-none prose-headings:text-[var(--text-color)] prose-p:text-[var(--text-color)] prose-strong:text-[var(--text-color)] prose-code:text-[var(--primary-color)] prose-pre:bg-[var(--bg-tertiary)] prose-pre:border prose-pre:border-[var(--border-color)] prose-blockquote:border-[var(--primary-color)] prose-blockquote:text-[var(--text-secondary)]">
     <div className="relative">
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-        {content}
-      </ReactMarkdown>
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
       {isStreaming && !hasActiveReasoning && !isUser && <StreamingCursor />}
     </div>
-    <CopyButton 
-      content={content} 
-      copied={copied} 
-      onCopy={() => onCopy(content)} 
+    <CopyButton
+      content={content}
+      copied={copied}
+      onCopy={() => onCopy(content)}
     />
   </div>
 );
@@ -181,33 +190,32 @@ const ConversationComp: React.FC<ConversationCompProps> = ({
 }) => {
   const [copied, setCopied] = useState<boolean>(false);
   const [showReasoning, setShowReasoning] = useState<boolean>(false);
-  
+
   const isUser = role === "user";
   const mainContent = propMainContent ?? content;
   const reasoningContent = propReasoningContent;
 
   // Memoize expensive computations
-  const containerClasses = useMemo(() => 
-    clsx("flex gap-4", isUser ? "flex-row-reverse" : "flex-row"),
+  const containerClasses = useMemo(
+    () => clsx("flex gap-4", isUser ? "flex-row-reverse" : "flex-row"),
     [isUser]
   );
 
-  const messageClasses = useMemo(() => 
-    clsx(
-      "flex-1 max-w-[85%] space-y-2",
-      isUser ? "text-right" : "text-left"
-    ),
+  const messageClasses = useMemo(
+    () =>
+      clsx("flex-1 max-w-[85%] space-y-2", isUser ? "text-right" : "text-left"),
     [isUser]
   );
 
-  const bubbleClasses = useMemo(() => 
-    clsx(
-      "inline-block max-w-full p-4 rounded-2xl shadow-sm border",
-      "bg-[var(--card-bg)] border-[var(--border-color)]",
-      isUser
-        ? "rounded-br-sm bg-[#F4F4F4] dark:from-blue-900/20 dark:to-purple-900/20"
-        : "rounded-bl-sm"
-    ),
+  const bubbleClasses = useMemo(
+    () =>
+      clsx(
+        "inline-block max-w-full p-4 rounded-2xl shadow-sm border",
+        "bg-[var(--card-bg)] border-[var(--border-color)]",
+        isUser
+          ? "rounded-br-sm bg-[#F4F4F4] dark:from-blue-900/20 dark:to-purple-900/20"
+          : "rounded-bl-sm"
+      ),
     [isUser]
   );
 
@@ -217,7 +225,7 @@ const ConversationComp: React.FC<ConversationCompProps> = ({
   }, []);
 
   const toggleReasoning = useCallback(() => {
-    setShowReasoning(prev => !prev);
+    setShowReasoning((prev) => !prev);
   }, []);
 
   // Auto-expand reasoning when actively streaming
@@ -236,12 +244,9 @@ const ConversationComp: React.FC<ConversationCompProps> = ({
   }, [copied]);
 
   return (
-    <motion.div
-      {...messageVariants}
-      className={containerClasses}
-    >
+    <motion.div {...messageVariants} className={containerClasses}>
       <Avatar isUser={isUser} />
-      
+
       <div className={messageClasses}>
         <div className={bubbleClasses}>
           {reasoningContent && (
