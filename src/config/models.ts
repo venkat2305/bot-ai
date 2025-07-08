@@ -15,7 +15,7 @@ export interface ModelConfig {
   id: string;
   name: string;
   displayName: string;
-  serviceProvider: 'groq' | 'openrouter' | 'perplexity';
+  serviceProvider: 'groq' | 'openrouter' | 'perplexity' | 'cerebras';
   description: string;
   contextWindow: number;
   maxCompletionTokens: number;
@@ -206,6 +206,33 @@ export const MODEL_CONFIGS: ModelConfig[] = [
     apiEndpoint: '/api/chat/perplexity',
     ownedBy: 'Perplexity',
   },
+  
+  // Cerebras Models
+  {
+    id: 'qwen-3-32b',
+    name: 'qwen-3-32b',
+    displayName: 'Qwen 3 32B',
+    serviceProvider: 'cerebras',
+    description: 'Alibaba\'s powerful 32B parameter model optimized for fast inference on Cerebras hardware. Excels at multilingual tasks, coding, mathematical reasoning, and general conversation with high performance and efficiency.',
+    contextWindow: 131072,
+    maxCompletionTokens: 32768,
+    capabilities: {
+      textInput: true,
+      textOutput: true,
+      imageInput: false,
+      imageOutput: false,
+      audioInput: false,
+      audioOutput: false,
+      transcription: false,
+      pdfSupport: false,
+      searchSupport: false,
+      isReasoningModel: true,
+    },
+    isActive: true,
+    apiEndpoint: '/api/chat/cerebras',
+    ownedBy: 'Alibaba',
+    created: 1735689600,
+  },
 ];
 
 // Helper functions
@@ -217,7 +244,7 @@ export const getModelById = (id: string): ModelConfig | undefined => {
   return MODEL_CONFIGS.find(model => model.id === id);
 };
 
-export const getModelsByProvider = (provider: 'groq' | 'openrouter' | 'perplexity'): ModelConfig[] => {
+export const getModelsByProvider = (provider: 'groq' | 'openrouter' | 'perplexity' | 'cerebras'): ModelConfig[] => {
   return MODEL_CONFIGS.filter(model => model.serviceProvider === provider && model.isActive);
 };
 

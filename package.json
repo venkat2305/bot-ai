@@ -10,6 +10,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/cerebras": "^0.2.15",
     "@ai-sdk/groq": "^1.2.9",
     "@ai-sdk/perplexity": "^1.1.9",
     "@auth/mongodb-adapter": "^3.10.0",
