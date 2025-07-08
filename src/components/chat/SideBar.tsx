@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
+import { Zoom } from "react-awesome-reveal";
 import { 
   Plus, 
   MessageSquare, 
@@ -319,30 +320,31 @@ function SideBar({
         <UserAuth collapsed={collapsed} />
 
         {/* Theme Toggle */}
-        <motion.button
-          onClick={onToggleTheme}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className={clsx(
-            "flex items-center gap-2 rounded-lg transition-all duration-200 hover:bg-[var(--bg-tertiary)] w-full",
-            collapsed ? "justify-center p-3" : "p-2"
-          )}
-          title={collapsed ? 'Toggle theme' : undefined}
-        >
-          {themeMode === 'light' ? (
-            <Sun className={clsx(collapsed ? "w-5 h-5" : "w-5 h-5")} />
-          ) : (
-            <Moon className={clsx(collapsed ? "w-5 h-5" : "w-5 h-5")} />
-          )}
-          {!collapsed && (
-            <span className="text-sm" style={{ color: 'var(--text-color)' }}>
-              {themeMode.charAt(0).toUpperCase() + themeMode.slice(1)}
-            </span>
-          )}
-        </motion.button>
+        <Zoom triggerOnce>
+          <motion.button
+            onClick={onToggleTheme}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className={clsx(
+              "flex items-center gap-2 rounded-lg transition-all duration-200 hover:bg-[var(--bg-tertiary)] w-full",
+              collapsed ? "justify-center p-3" : "p-2"
+            )}
+            title={collapsed ? 'Toggle theme' : undefined}
+          >
+            {themeMode === 'light' ? (
+              <Sun className={clsx(collapsed ? "w-5 h-5" : "w-5 h-5")} />
+            ) : (
+              <Moon className={clsx(collapsed ? "w-5 h-5" : "w-5 h-5")} />
+            )}
+            {!collapsed && (
+              <span className="text-sm" style={{ color: 'var(--text-color)' }}>
+                {themeMode.charAt(0).toUpperCase() + themeMode.slice(1)}
+              </span>
+            )}
+          </motion.button>
+        </Zoom>
       </div>
     </div>
   );
 }
-
 export default SideBar;

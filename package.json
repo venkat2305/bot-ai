@@ -32,6 +32,7 @@
     "openai": "^4.72.0",
     "postcss": "^8.4.38",
     "react": "^19.1.0",
+    "react-awesome-reveal": "^4.3.1",
     "react-dom": "^19.1.0",
     "react-markdown": "^9.0.1",
     "remark-gfm": "^4.0.1",

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence, easeInOut } from "framer-motion";
+import { Fade } from "react-awesome-reveal";
 import {
   ChevronDown,
   ChevronUp,
@@ -244,11 +245,12 @@ const ConversationComp: React.FC<ConversationCompProps> = ({
   }, [copied]);
 
   return (
-    <motion.div {...messageVariants} className={containerClasses}>
-      <Avatar isUser={isUser} />
+    <Fade triggerOnce>
+      <motion.div {...messageVariants} className={containerClasses}>
+        <Avatar isUser={isUser} />
 
-      <div className={messageClasses}>
-        <div className={bubbleClasses}>
+        <div className={messageClasses}>
+          <div className={bubbleClasses}>
           {reasoningContent && (
             <ReasoningSection
               reasoningContent={reasoningContent}
@@ -270,9 +272,10 @@ const ConversationComp: React.FC<ConversationCompProps> = ({
               copied={copied}
             />
           )}
+          </div>
         </div>
-      </div>
-    </motion.div>
+      </motion.div>
+    </Fade>
   );
 };
 
