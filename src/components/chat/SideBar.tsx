@@ -103,7 +103,7 @@ function UserAuth({ collapsed }: { collapsed: boolean }) {
       )}
       title={collapsed ? "Sign In" : undefined}
     >
-      <LogIn className={clsx("flex-shrink-0", collapsed ? "w-5 h-5" : "w-5 h-5")} />
+      <LogIn className={clsx("flex-shrink-0", collapsed ? "w-5 h-5" : "w-4 h-4")} />
       {!collapsed && (
         <motion.span
           initial={{ opacity: 0, width: 0 }}
@@ -194,7 +194,7 @@ function SideBar({
 
   return (
     <div className={clsx(
-      "flex flex-col min-h-screen gap-4 transition-all duration-300",
+      "flex flex-col h-screen gap-4 transition-all duration-300",
       collapsed ? "p-2" : "p-4"
     )}>
       {/* Header */}
@@ -269,7 +269,7 @@ function SideBar({
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ delay: index * 0.05 }}
                   className={clsx(
-                    "group relative p-3 rounded-lg cursor-pointer transition-all duration-200",
+                    "group relative px-3 py-1 rounded-lg cursor-pointer transition-all duration-200",
                     "hover:bg-[var(--bg-tertiary)] border border-transparent",
                     currentChatId === chat.uuid 
                       ? "bg-[var(--bg-tertiary)] border-[var(--primary-color)]" 
@@ -285,10 +285,10 @@ function SideBar({
                          style={{ color: "var(--text-color)" }}>
                         {chat.title}
                       </p>
-                      <p className="text-xs truncate mt-1" 
+                      {/* <p className="text-xs truncate mt-1" 
                          style={{ color: "var(--text-muted)" }}>
                         {formatDate(chat.updatedAt)}
-                      </p>
+                      </p> */}
                     </div>
                     <motion.button
                       initial={{ opacity: 0, scale: 0.8 }}
@@ -314,7 +314,7 @@ function SideBar({
       )}
 
       {/* Bottom Section */}
-      <div className="mt-auto flex flex-col gap-2">
+       <div className="mt-auto flex flex-col gap-2">
         {/* User Authentication */}
         <UserAuth collapsed={collapsed} />
 
