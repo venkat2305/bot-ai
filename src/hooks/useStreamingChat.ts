@@ -70,24 +70,32 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
 
         for (const line of lines) {
           const trimmed = line.trim();
-          if (trimmed.startsWith('data: ')) {
-            const data = trimmed.slice(6);
-            
-            if (data === '[DONE]') {
-              break;
-            }
-
+          
+          // Handle native Vercel AI SDK data stream format
+          // Format: 0:"text content" for text chunks
+          if (trimmed.startsWith('0:')) {
             try {
-              const parsed = JSON.parse(data);
-              const delta = parsed.choices?.[0]?.delta?.content || '';
+              // Extract the JSON string after "0:"
+              const jsonStr = trimmed.slice(2);
+              const content = JSON.parse(jsonStr);
               
-              if (delta) {
-                onChunk(delta);
+              // The content should be a string with the text chunk
+              if (typeof content === 'string' && content) {
+                onChunk(content);
               }
             } catch (e) {
               // Skip invalid JSON lines
               continue;
             }
+          }
+          // Handle other data stream parts if needed
+          else if (trimmed.startsWith('8:')) {
+            // Tool calls or other types - we can handle these later if needed
+            continue;
+          }
+          else if (trimmed.startsWith('9:')) {
+            // Stream end marker
+            break;
           }
         }
       }
