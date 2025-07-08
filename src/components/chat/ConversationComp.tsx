@@ -36,35 +36,8 @@ function ConversationComp({
     }, 3000);
   };
 
-  // Use provided content or fallback to parsing for non-streaming messages
-  const getContentSections = () => {
-    if (propReasoningContent !== undefined || propMainContent !== undefined) {
-      // Use provided props (for streaming messages)
-      return {
-        reasoningContent: propReasoningContent || '',
-        mainContent: propMainContent || ''
-      };
-    } else if (!isReasoningModel || isUser) {
-      // No reasoning model or user message
-      return { mainContent: content, reasoningContent: null };
-    } else {
-      // Fallback: parse completed content for reasoning tags
-      const thinkRegex = /<think>([\s\S]*?)<\/think>/g;
-      const reasoningMatches = [];
-      let match;
-      
-      while ((match = thinkRegex.exec(content)) !== null) {
-        reasoningMatches.push(match[1].trim());
-      }
-
-      const mainContent = content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
-      const reasoningContent = reasoningMatches.length > 0 ? reasoningMatches.join('\n\n') : null;
-
-      return { mainContent, reasoningContent };
-    }
-  };
-
-  const { mainContent, reasoningContent } = getContentSections();
+  const mainContent = propMainContent ?? content;
+  const reasoningContent = propReasoningContent;
 
   // Auto-expand reasoning when actively streaming reasoning content
   React.useEffect(() => {
@@ -177,7 +150,7 @@ function ConversationComp({
           )}
 
           {/* Main Content */}
-          {(mainContent || (!reasoningContent && content)) && (
+          {mainContent && (
             <div className={clsx(
               "prose prose-sm max-w-none",
               "prose-headings:text-[var(--text-color)]",
@@ -190,7 +163,7 @@ function ConversationComp({
               "prose-blockquote:text-[var(--text-secondary)]"
             )}>
               <div className="relative">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{mainContent || content}</ReactMarkdown>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{mainContent}</ReactMarkdown>
                 {isStreaming && !hasActiveReasoning && !isUser && (
                   <motion.span
                     animate={{ opacity: [0.5, 1, 0.5] }}
@@ -200,7 +173,7 @@ function ConversationComp({
                 )}
               </div>
               <button
-                onClick={() => handleCopy(content)}
+                onClick={() => handleCopy(mainContent)}
                 className="mt-2 text-xs text-[var(--text-secondary)] hover:text-[var(--primary-color)] flex items-center gap-1"
               >
                 {copied ? "Copied!" : <ClipboardCopy className="w-3 h-3" />} {copied ? "" : "Copy"}

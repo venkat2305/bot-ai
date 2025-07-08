@@ -178,7 +178,7 @@ export const MODEL_CONFIGS: ModelConfig[] = [
       transcription: false,
       pdfSupport: false,
       searchSupport: false,
-      isReasoningModel: false,
+      isReasoningModel: true,
     },
     isActive: true,
     apiEndpoint: '/api/chat/perplexity',
