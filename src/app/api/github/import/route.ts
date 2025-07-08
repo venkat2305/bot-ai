@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { Octokit } from '@octokit/rest';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
 import treeify from 'treeify';
+import { getR2Client, getR2Config } from '@/lib/r2Client';
 
 // Supported file extensions
 const SUPPORTED_EXTENSIONS = ['.js', '.py', '.java', '.cpp', '.html', '.css', '.ts', '.jsx', '.tsx'];
@@ -32,25 +33,7 @@ interface GitHubImportResponse {
   error?: string;
 }
 
-function createR2Client() {
-  const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
-  const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
-  const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
 
-  if (!R2_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY) {
-    throw new Error('Missing R2 configuration');
-  }
-
-  return new S3Client({
-    region: 'auto',
-    endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-    credentials: {
-      accessKeyId: R2_ACCESS_KEY_ID,
-      secretAccessKey: R2_SECRET_ACCESS_KEY,
-    },
-    forcePathStyle: false,
-  });
-}
 
 function parseGitHubUrl(url: string): { owner: string; repo: string } {
   const match = url.match(/github\.com\/([^\/]+)\/([^\/]+)/);
@@ -182,18 +165,12 @@ async function fetchGitHubFiles(
 }
 
 async function uploadToR2(content: string, fileName: string): Promise<string> {
-  const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME;
-  const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL;
-
-  if (!R2_BUCKET_NAME || !R2_PUBLIC_URL) {
-    throw new Error('R2 configuration incomplete');
-  }
-
-  const s3Client = createR2Client();
-  const key = `github-repos/${fileName}`;
+  const { bucketName, publicUrl } = getR2Config();
+  const s3Client = getR2Client();
+  const key = `github/${fileName}`;
 
   const uploadCommand = new PutObjectCommand({
-    Bucket: R2_BUCKET_NAME,
+    Bucket: bucketName,
     Key: key,
     Body: content,
     ContentType: 'text/plain',
@@ -201,7 +178,7 @@ async function uploadToR2(content: string, fileName: string): Promise<string> {
 
   await s3Client.send(uploadCommand);
 
-  return `${R2_PUBLIC_URL}/${key}`;
+  return `${publicUrl}/${key}`;
 }
 
 function formatRepositoryContent(

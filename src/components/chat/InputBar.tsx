@@ -61,6 +61,48 @@ function InputBar({
     }
   };
 
+  const handlePaste = async (e: React.ClipboardEvent<HTMLTextAreaElement>): Promise<void> => {
+    if (!supportsImages) return;
+
+    const items = Array.from(e.clipboardData.items);
+    const imageFiles = items
+      .filter(item => item.type.startsWith('image/'))
+      .map(item => item.getAsFile())
+      .filter(file => file !== null) as File[];
+
+    if (imageFiles.length === 0) return;
+
+    e.preventDefault();
+    setIsUploading(true);
+    
+    try {
+      const uploadPromises = imageFiles.map(async (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Upload failed');
+        }
+
+        return await response.json();
+      });
+
+      const uploadedImages = await Promise.all(uploadPromises);
+      setAttachedImages(prev => [...prev, ...uploadedImages]);
+    } catch (error) {
+      console.error('Paste upload error:', error);
+      alert(error instanceof Error ? error.message : 'Failed to upload pasted image');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
     onChange(e.target.value);
   };
@@ -205,10 +247,11 @@ function InputBar({
               "text-sm leading-5 min-h-[20px] max-h-[120px]",
               disabled && "cursor-not-allowed"
             )}
-            placeholder={placeholder}
+            placeholder={supportsImages ? `${placeholder} (Paste images or use the attach button)` : placeholder}
             value={value}
             onChange={handleTextareaChange}
             onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
             onFocus={handleFocus}
             onBlur={handleBlur}
             disabled={disabled}

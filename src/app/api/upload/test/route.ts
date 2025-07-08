@@ -4,29 +4,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { S3Client, ListObjectsV2Command } from '@aws-sdk/client-s3';
+import { ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-
-function createR2Client() {
-  const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
-  const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
-  const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
-
-  if (!R2_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY) {
-    throw new Error('Missing R2 configuration');
-  }
-
-  return new S3Client({
-    region: 'auto',
-    endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-    credentials: {
-      accessKeyId: R2_ACCESS_KEY_ID,
-      secretAccessKey: R2_SECRET_ACCESS_KEY,
-    },
-    forcePathStyle: false,
-  });
-}
+import { getR2Client, getR2Config } from '@/lib/r2Client';
 
 export async function GET(req: NextRequest) {
   try {
@@ -36,48 +17,28 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
-    const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME;
-    const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL;
-    const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
-    const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
+    const { accountId, bucketName, publicUrl } = getR2Config();
 
     const config = {
-      hasAccountId: !!R2_ACCOUNT_ID,
-      hasBucketName: !!R2_BUCKET_NAME,
-      hasPublicUrl: !!R2_PUBLIC_URL,
-      hasAccessKey: !!R2_ACCESS_KEY_ID,
-      hasSecretKey: !!R2_SECRET_ACCESS_KEY,
-      accountId: R2_ACCOUNT_ID ? `${R2_ACCOUNT_ID.substring(0, 8)}...` : null,
-      bucketName: R2_BUCKET_NAME,
-      publicUrl: R2_PUBLIC_URL,
+      hasAccountId: true,
+      hasBucketName: true,
+      hasPublicUrl: true,
+      hasAccessKey: true,
+      hasSecretKey: true,
+      accountId: `${accountId.substring(0, 8)}...`,
+      bucketName,
+      publicUrl,
     };
 
     console.log('R2 Configuration Check:', config);
 
-    if (!R2_ACCOUNT_ID || !R2_BUCKET_NAME || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY) {
-      return NextResponse.json({
-        success: false,
-        error: 'Missing required R2 environment variables',
-        config,
-      });
-    }
-
-    if (!R2_PUBLIC_URL) {
-      return NextResponse.json({
-        success: false,
-        error: 'R2_PUBLIC_URL is required for public image access',
-        config,
-      });
-    }
-
     // Test R2 connection
-    const s3Client = createR2Client();
+    const s3Client = getR2Client();
     
     console.log('Testing R2 connection...');
     
     const listCommand = new ListObjectsV2Command({
-      Bucket: R2_BUCKET_NAME,
+      Bucket: bucketName,
       MaxKeys: 1, // Just test connection, don't list all objects
     });
 
@@ -114,11 +75,11 @@ export async function GET(req: NextRequest) {
       success: false,
       error: errorMessage,
       config: {
-        hasAccountId: !!process.env.R2_ACCOUNT_ID,
-        hasBucketName: !!process.env.R2_BUCKET_NAME,
-        hasPublicUrl: !!process.env.R2_PUBLIC_URL,
-        hasAccessKey: !!process.env.R2_ACCESS_KEY_ID,
-        hasSecretKey: !!process.env.R2_SECRET_ACCESS_KEY,
+        hasAccountId: true,
+        hasBucketName: true,
+        hasPublicUrl: true,
+        hasAccessKey: true,
+        hasSecretKey: true,
       },
     });
   }
