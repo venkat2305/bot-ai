@@ -1,23 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ModelConfig, getActiveModels, getModelById, DEFAULT_MODEL_ID } from '@/config/models';
 import { useStreamingChat } from './useStreamingChat';
-
-export interface ImageAttachment {
-  url: string;
-  filename: string;
-  mimeType: string;
-  size: number;
-}
-
-export interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-  images?: ImageAttachment[];
-  isStreaming?: boolean;
-  reasoningContent?: string;
-  mainContent?: string;
-  hasActiveReasoning?: boolean;
-}
+import { ImageAttachment, GitHubAttachment, Message } from '@/types/chat';
 
 export default function useConversation(chatId: string | undefined) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -79,10 +63,10 @@ export default function useConversation(chatId: string | undefined) {
   }, [chatId]);
 
   const sendMessage = useCallback(
-    async (input: string, images?: ImageAttachment[]) => {
+    async (input: string, images?: ImageAttachment[], githubAttachment?: GitHubAttachment) => {
       const currentChatId = chatId;
 
-      if (!input.trim() && (!images || images.length === 0)) return;
+      if (!input.trim() && (!images || images.length === 0) && !githubAttachment) return;
       if (!selectedModel) {
         console.error('No model selected');
         return;
@@ -97,7 +81,8 @@ export default function useConversation(chatId: string | undefined) {
       const userMessage: Message = { 
         role: 'user', 
         content: input,
-        ...(images && images.length > 0 && { images })
+        ...(images && images.length > 0 && { images }),
+        ...(githubAttachment && { githubAttachment })
       };
       setMessages((prevMessages) => [...prevMessages, userMessage]);
       setLoading(true);
@@ -120,10 +105,11 @@ export default function useConversation(chatId: string | undefined) {
         const allMessages = [
           ...messages,
           userMessage
-        ].map(({ role, content, images }) => ({ 
+        ].map(({ role, content, images, githubAttachment }) => ({ 
           role, 
           content,
-          ...(images && images.length > 0 && { images })
+          ...(images && images.length > 0 && { images }),
+          ...(githubAttachment && { githubAttachment })
         }));
 
         // Create streaming assistant message

@@ -4,13 +4,7 @@ import Chat from '@/server/models/Chat';
 import Message from '@/server/models/Message';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-
-interface ImageAttachment {
-  url: string;
-  filename: string;
-  mimeType: string;
-  size: number;
-}
+import { ImageAttachment, GitHubAttachment } from '@/types/chat';
 
 export async function GET(
   req: NextRequest,
@@ -50,6 +44,17 @@ export async function GET(
           size: img.size
         }))
       }),
+      ...(msg.githubAttachment && { 
+        githubAttachment: {
+          type: msg.githubAttachment.type,
+          url: msg.githubAttachment.url,
+          filename: msg.githubAttachment.filename,
+          repoUrl: msg.githubAttachment.repoUrl,
+          branch: msg.githubAttachment.branch,
+          totalFiles: msg.githubAttachment.totalFiles,
+          totalSize: msg.githubAttachment.totalSize
+        }
+      }),
     }));
 
     return NextResponse.json(transformedMessages, { status: 200 });
@@ -73,7 +78,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { role, content, title, images } = await req.json();
+    const { role, content, title, images, githubAttachment } = await req.json();
 
     if (!role || !content) {
       return NextResponse.json(
@@ -111,6 +116,7 @@ export async function POST(
       role,
       content,
       ...(images && images.length > 0 && { images }),
+      ...(githubAttachment && { githubAttachment }),
     });
 
     await newMessage.save();
@@ -126,6 +132,17 @@ export async function POST(
           mimeType: img.mimeType,
           size: img.size
         }))
+      }),
+      ...(newMessage.githubAttachment && { 
+        githubAttachment: {
+          type: newMessage.githubAttachment.type,
+          url: newMessage.githubAttachment.url,
+          filename: newMessage.githubAttachment.filename,
+          repoUrl: newMessage.githubAttachment.repoUrl,
+          branch: newMessage.githubAttachment.branch,
+          totalFiles: newMessage.githubAttachment.totalFiles,
+          totalSize: newMessage.githubAttachment.totalSize
+        }
       }),
     };
 

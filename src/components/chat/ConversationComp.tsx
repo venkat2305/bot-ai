@@ -8,16 +8,19 @@ import {
   Bot,
   ClipboardCopy,
   Check,
+  Github,
+  FileText,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import clsx from "clsx";
-import { ImageAttachment } from "@/hooks/useConversation";
+import { ImageAttachment, GitHubAttachment } from "@/types/chat";
 
 interface ConversationCompProps {
   role: "user" | "assistant";
   content: string;
   images?: ImageAttachment[];
+  githubAttachment?: GitHubAttachment;
   isStreaming?: boolean;
   isReasoningModel?: boolean;
   reasoningContent?: string;
@@ -201,10 +204,66 @@ const ImageGallery: React.FC<{ images: ImageAttachment[] }> = ({ images }) => (
   </div>
 );
 
+const GitHubAttachmentDisplay: React.FC<{ githubAttachment: GitHubAttachment }> = ({ githubAttachment }) => (
+  <div className="mb-3 p-3 bg-[var(--bg-tertiary)] rounded-lg border border-[var(--border-color)]">
+    <div className="flex items-center gap-2 mb-2">
+      <Github className="w-4 h-4 text-[var(--primary-color)]" />
+      <span className="text-sm font-medium text-[var(--text-color)]">GitHub Repository</span>
+    </div>
+    <div className="space-y-1 text-xs text-[var(--text-muted)]">
+      {githubAttachment.repoUrl && (
+        <div className="flex items-center gap-2">
+          <span className="font-medium">Repository:</span>
+          <a 
+            href={githubAttachment.repoUrl} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-[var(--primary-color)] hover:underline"
+          >
+            {githubAttachment.repoUrl.replace('https://github.com/', '')}
+          </a>
+        </div>
+      )}
+      {githubAttachment.branch && (
+        <div className="flex items-center gap-2">
+          <span className="font-medium">Branch:</span>
+          <span>{githubAttachment.branch}</span>
+        </div>
+      )}
+      {githubAttachment.totalFiles !== undefined && (
+        <div className="flex items-center gap-2">
+          <span className="font-medium">Files:</span>
+          <span>{githubAttachment.totalFiles} files</span>
+        </div>
+      )}
+      {githubAttachment.totalSize !== undefined && (
+        <div className="flex items-center gap-2">
+          <span className="font-medium">Size:</span>
+          <span>{(githubAttachment.totalSize / 1024).toFixed(1)}KB</span>
+        </div>
+      )}
+    </div>
+    {githubAttachment.url && (
+      <div className="mt-2 pt-2 border-t border-[var(--border-color)]">
+        <a 
+          href={githubAttachment.url} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="flex items-center gap-1 text-xs text-[var(--primary-color)] hover:underline"
+        >
+          <FileText className="w-3 h-3" />
+          View processed file
+        </a>
+      </div>
+    )}
+  </div>
+);
+
 const ConversationComp: React.FC<ConversationCompProps> = ({
   role,
   content,
   images,
+  githubAttachment,
   isStreaming = false,
   isReasoningModel = false,
   reasoningContent: propReasoningContent,
@@ -268,6 +327,11 @@ const ConversationComp: React.FC<ConversationCompProps> = ({
           {/* Display images if present */}
           {images && images.length > 0 && (
             <ImageGallery images={images} />
+          )}
+
+          {/* Display GitHub attachment if present */}
+          {githubAttachment && (
+            <GitHubAttachmentDisplay githubAttachment={githubAttachment} />
           )}
 
           {reasoningContent && (

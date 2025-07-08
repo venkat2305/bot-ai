@@ -1,24 +1,7 @@
 import { streamText } from 'ai';
 import { createGroq } from '@ai-sdk/groq';
 import { NextRequest } from 'next/server';
-
-interface ImageAttachment {
-  url: string;
-  filename: string;
-  mimeType: string;
-  size: number;
-}
-
-interface ChatMessage {
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-  images?: ImageAttachment[];
-}
-
-interface ChatRequest {
-  messages: ChatMessage[];
-  model: string;
-}
+import { ImageAttachment, GitHubAttachment, ChatMessage, ChatRequest } from '@/types/chat';
 
 export async function POST(req: NextRequest) {
   const GROQ_API_KEY = process.env.GROQ_API_KEY;
@@ -46,8 +29,27 @@ export async function POST(req: NextRequest) {
       apiKey: GROQ_API_KEY,
     });
 
-    // Transform messages to support images according to AI SDK format
-    const transformedMessages = messages.map(message => {
+    // Transform messages to support images and GitHub attachments according to AI SDK format
+    const transformedMessages = await Promise.all(messages.map(async (message) => {
+      let messageContent = message.content;
+      
+      // If there's a GitHub attachment, fetch the content and append it
+      if (message.githubAttachment && message.githubAttachment.url) {
+        try {
+          console.log('Fetching GitHub content from:', message.githubAttachment.url);
+          const response = await fetch(message.githubAttachment.url);
+          if (response.ok) {
+            const githubContent = await response.text();
+            console.log('GitHub content fetched successfully, length:', githubContent.length);
+            messageContent = `${message.content}\n\n[GitHub Repository Content]\n${githubContent}`;
+            console.log('Final message content length:', messageContent.length);
+          } else {
+            console.error('Failed to fetch GitHub content:', response.status, response.statusText);
+          }
+        } catch (error) {
+          console.error('Error fetching GitHub content:', error);
+        }
+      }
       if (message.images && message.images.length > 0) {
         console.log(`Groq message with ${message.images.length} images:`, message.images);
         
@@ -55,10 +57,10 @@ export async function POST(req: NextRequest) {
         const content: Array<{ type: 'text'; text: string } | { type: 'image'; image: string }> = [];
         
         // Add text part first if there's content
-        if (message.content && message.content.trim()) {
+        if (messageContent && messageContent.trim()) {
           content.push({
             type: 'text',
-            text: message.content
+            text: messageContent
           });
         }
         
@@ -82,10 +84,10 @@ export async function POST(req: NextRequest) {
         // Regular text message
         return {
           role: message.role,
-          content: message.content
+          content: messageContent
         };
       }
-    });
+    }));
 
     console.log('Groq final transformed messages:', JSON.stringify(transformedMessages, null, 2));
 

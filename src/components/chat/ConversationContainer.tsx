@@ -1,10 +1,12 @@
-import React from "react";
+import React, { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Zap, X } from "lucide-react";
 import InputBar from "./InputBar";
 import ConversationComp from "./ConversationComp";
-import useConversation, { ImageAttachment } from "../../hooks/useConversation";
+import useConversation from "../../hooks/useConversation";
+import { ImageAttachment, GitHubAttachment } from "@/types/chat";
 import { useRouter } from 'next/navigation';
+import GitHubImportModal from "../ui/GitHubImportModal";
 
 interface ConversationContainerProps {
   chatId?: string;
@@ -32,9 +34,50 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
   const router = useRouter();
 
   const [inputText, setInputText] = React.useState<string>("");
+  const [isGitHubModalOpen, setIsGitHubModalOpen] = useState(false);
+  const [pendingGitHubAttachment, setPendingGitHubAttachment] = useState<GitHubAttachment | null>(null);
 
-  const handleSend = async (question: string, images?: ImageAttachment[]) => {
-    await sendMessage(question, images);
+  const handleSend = async (question: string, images?: ImageAttachment[], githubAttachment?: GitHubAttachment) => {
+    await sendMessage(question, images, githubAttachment);
+    setPendingGitHubAttachment(null);
+  };
+
+  const handleGitHubImport = async (repoUrl: string, branch?: string) => {
+    try {
+      const response = await fetch('/api/github/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ repoUrl, branch }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to import repository');
+      }
+
+      const result = await response.json();
+      
+      const githubAttachment: GitHubAttachment = {
+        type: 'github',
+        url: result.fileUrl,
+        filename: result.fileName,
+        repoUrl,
+        branch: branch || 'main',
+        totalFiles: result.totalFiles,
+        totalSize: result.totalSize,
+      };
+
+      setPendingGitHubAttachment(githubAttachment);
+      // Remove the automatic text setting
+      // setInputText(`Please analyze the GitHub repository: ${repoUrl}`);
+    } catch (error) {
+      console.error('GitHub import error:', error);
+      throw error;
+    }
+  };
+
+  const handleRemoveGitHubAttachment = () => {
+    setPendingGitHubAttachment(null);
   };
 
   const getModelOptions = (): SelectOption[] => {
@@ -71,6 +114,9 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
                   onModelChange={setSelectedModelId}
                   availableModels={getModelOptions()}
                   supportsImages={selectedModel?.capabilities.imageInput || false}
+                  onGitHubImport={() => setIsGitHubModalOpen(true)}
+                  githubAttachment={pendingGitHubAttachment}
+                  onRemoveGitHubAttachment={handleRemoveGitHubAttachment}
                 />
               </div>
             </motion.div>
@@ -88,6 +134,7 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
                   role={message.role}
                   content={message.content}
                   images={message.images}
+                  githubAttachment={message.githubAttachment}
                   isStreaming={message.isStreaming}
                   isReasoningModel={selectedModel?.capabilities.isReasoningModel}
                   reasoningContent={message.reasoningContent}
@@ -113,11 +160,20 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
                 onModelChange={setSelectedModelId}
                 availableModels={getModelOptions()}
                 supportsImages={selectedModel?.capabilities.imageInput || false}
+                onGitHubImport={() => setIsGitHubModalOpen(true)}
+                githubAttachment={pendingGitHubAttachment}
+                onRemoveGitHubAttachment={handleRemoveGitHubAttachment}
               />
             </div>
           </div>
         )}
       </div>
+
+      <GitHubImportModal
+        isOpen={isGitHubModalOpen}
+        onClose={() => setIsGitHubModalOpen(false)}
+        onImport={handleGitHubImport}
+      />
     </div>
   );
 }

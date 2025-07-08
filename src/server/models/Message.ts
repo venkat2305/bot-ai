@@ -34,6 +34,30 @@ const MessageSchema = new mongoose.Schema(
         required: true,
       }
     }],
+    githubAttachment: {
+      type: {
+        type: String,
+        enum: ['github'],
+      },
+      url: {
+        type: String,
+      },
+      filename: {
+        type: String,
+      },
+      repoUrl: {
+        type: String,
+      },
+      branch: {
+        type: String,
+      },
+      totalFiles: {
+        type: Number,
+      },
+      totalSize: {
+        type: Number,
+      }
+    },
   },
   { timestamps: true }
 );

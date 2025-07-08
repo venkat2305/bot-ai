@@ -1,11 +1,12 @@
 import { useState, useCallback, useRef } from 'react';
 import { ModelConfig } from '@/config/models';
-import { ImageAttachment } from './useConversation';
+import { ImageAttachment, GitHubAttachment } from '@/types/chat';
 
 export interface StreamingMessage {
   role: 'user' | 'assistant';
   content: string;
   images?: ImageAttachment[];
+  githubAttachment?: GitHubAttachment;
   isStreaming?: boolean;
 }
 
@@ -35,13 +36,20 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
     options.onStreamStart?.();
 
     try {
-      // Transform messages to include images if present
+      // Transform messages to include images and GitHub attachments if present
       const transformedMessages = messages.map(message => {
         const baseMessage = { role: message.role, content: message.content };
+        const additionalFields: any = {};
+        
         if (message.images && message.images.length > 0) {
-          return { ...baseMessage, images: message.images };
+          additionalFields.images = message.images;
         }
-        return baseMessage;
+        
+        if (message.githubAttachment) {
+          additionalFields.githubAttachment = message.githubAttachment;
+        }
+        
+        return { ...baseMessage, ...additionalFields };
       });
 
       const response = await fetch(model.apiEndpoint, {

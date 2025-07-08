@@ -1,16 +1,7 @@
 import { streamText } from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { NextRequest } from 'next/server';
-
-interface ChatMessage {
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-}
-
-interface ChatRequest {
-  messages: ChatMessage[];
-  model: string;
-}
+import { GitHubAttachment, ChatMessage, ChatRequest } from '@/types/chat';
 
 export async function POST(req: NextRequest) {
   const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
@@ -40,9 +31,36 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Transform messages to handle GitHub attachments
+    const transformedMessages = await Promise.all(messages.map(async (message) => {
+      let messageContent = message.content;
+      
+      // If there's a GitHub attachment, fetch the content and append it
+      if (message.githubAttachment && message.githubAttachment.url) {
+        try {
+          console.log('Fetching GitHub content from:', message.githubAttachment.url);
+          const response = await fetch(message.githubAttachment.url);
+          if (response.ok) {
+            const githubContent = await response.text();
+            console.log('GitHub content fetched successfully, length:', githubContent.length);
+            messageContent = `${message.content}\n\n[GitHub Repository Content]\n${githubContent}`;
+          } else {
+            console.error('Failed to fetch GitHub content:', response.status, response.statusText);
+          }
+        } catch (error) {
+          console.error('Error fetching GitHub content:', error);
+        }
+      }
+      
+      return {
+        role: message.role,
+        content: messageContent
+      };
+    }));
+
     const result = streamText({
       model: openrouter(model),
-      messages,
+      messages: transformedMessages,
     });
 
     // Use native Vercel AI SDK stream format
