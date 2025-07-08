@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, Sparkles, Loader2, Zap, Brain, Search, Image as ImageIcon, FileText, X } from "lucide-react";
+import { Loader2, Zap, X } from "lucide-react";
 import Image from "next/image";
 import InputBar from "./InputBar";
 import ConversationComp from "./ConversationComp";
@@ -8,7 +8,6 @@ import ConversationStarter from "./ConversationStarter";
 import siteIcon from "../../assets/site-icon.png";
 import sampleData from "../../assets/sampleData.json";
 import useConversation from "../../hooks/useConversation";
-import clsx from "clsx";
 import { useRouter } from 'next/navigation';
 
 interface ConversationContainerProps {
@@ -24,13 +23,6 @@ interface SelectOption {
   label: string;
   description?: string;
   capabilities?: string[];
-}
-
-interface CustomSelectProps {
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-  options: SelectOption[];
-  placeholder?: string;
 }
 
 function ConversationContainer({ chatId }: ConversationContainerProps) {
@@ -72,42 +64,6 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
     await sendMessage(question);
   };
 
-  const getCapabilityIcons = (capabilities: any) => {
-    const icons = [];
-    if (capabilities.isReasoningModel) icons.push(<Brain key="reasoning" className="w-3 h-3" />);
-    if (capabilities.searchSupport) icons.push(<Search key="search" className="w-3 h-3" />);
-    if (capabilities.imageInput) icons.push(<ImageIcon key="image" className="w-3 h-3" />);
-    if (capabilities.pdfSupport) icons.push(<FileText key="pdf" className="w-3 h-3" />);
-    return icons;
-  };
-
-  const ModelSelect: React.FC<CustomSelectProps> = ({ value, onChange, options }) => (
-    <div className="relative">
-      <select
-        className={clsx(
-          "appearance-none bg-[var(--card-bg)] border border-[var(--border-color)]",
-          "rounded-xl px-4 py-2.5 pr-10 text-sm font-medium min-w-[280px]",
-          "text-[var(--text-color)] cursor-pointer",
-          "focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent",
-          "transition-all duration-200"
-        )}
-        style={{ 
-          boxShadow: "var(--shadow)",
-        }}
-        value={value}
-        onChange={onChange}
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 pointer-events-none" 
-        style={{ color: "var(--text-secondary)" }} />
-    </div>
-  );
-
   const getModelOptions = (): SelectOption[] => {
     return availableModels.map(model => ({
       value: model.id,
@@ -119,66 +75,8 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
     }));
   };
 
-  const getProviderBadgeColor = (provider: string) => {
-    switch (provider) {
-      case 'groq': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300';
-      case 'openrouter': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300';
-      case 'perplexity': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300';
-      case 'cerebras': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300';
-      case 'gemini': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300';
-    }
-  };
-
   return (
     <div className="flex flex-col h-screen bg-[var(--bg-body)]">
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between p-6 border-b"
-        style={{ borderColor: "var(--border-color)" }}
-      >
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-gradient-to-r from-[var(--primary-color)] to-[var(--primary-hover)]">
-            <Sparkles className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold" style={{ color: "var(--text-color)" }}>
-              AI Assistant
-            </h1>
-            <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-              Powered by advanced AI models
-            </p>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-4">
-          {selectedModel && (
-            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--card-bg)] border border-[var(--border-color)]">
-              <span className={clsx(
-                "px-2 py-1 rounded-md text-xs font-medium",
-                getProviderBadgeColor(selectedModel.serviceProvider)
-              )}>
-                {selectedModel.serviceProvider.toUpperCase()}
-              </span>
-              <div className="flex items-center gap-1">
-                {getCapabilityIcons(selectedModel.capabilities)}
-              </div>
-              <span className="text-xs text-[var(--text-secondary)]">
-                {selectedModel.contextWindow.toLocaleString()} ctx
-              </span>
-            </div>
-          )}
-          
-          <ModelSelect
-            value={selectedModelId}
-            onChange={(e) => setSelectedModelId(e.target.value)}
-            options={getModelOptions()}
-            placeholder="Select AI Model"
-          />
-        </div>
-      </motion.div>
-
       <div className="flex-1 flex flex-col overflow-hidden">
         <AnimatePresence mode="wait">
           {messages.length === 0 ? (
@@ -285,6 +183,9 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
             onSend={handleSend}
             disabled={loading || isStreaming}
             placeholder="Type your message..."
+            selectedModelId={selectedModelId}
+            onModelChange={setSelectedModelId}
+            availableModels={getModelOptions()}
           />
         </div>
       </div>

@@ -1,7 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Send, Paperclip } from "lucide-react";
+import { Send, Paperclip, ChevronDown } from "lucide-react";
 import clsx from "clsx";
+
+interface SelectOption {
+  value: string;
+  label: string;
+  description?: string;
+  capabilities?: string[];
+}
 
 interface InputBarProps {
   value: string;
@@ -9,9 +16,21 @@ interface InputBarProps {
   onSend: (question: string) => void;
   disabled?: boolean;
   placeholder?: string;
+  selectedModelId: string;
+  onModelChange: (modelId: string) => void;
+  availableModels: SelectOption[];
 }
 
-function InputBar({ value, onChange, onSend, disabled = false, placeholder = "Type your message here..." }: InputBarProps) {
+function InputBar({ 
+  value, 
+  onChange, 
+  onSend, 
+  disabled = false, 
+  placeholder = "Type your message here...",
+  selectedModelId,
+  onModelChange,
+  availableModels
+}: InputBarProps) {
   const [isFocused, setIsFocused] = useState<boolean>(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -39,6 +58,10 @@ function InputBar({ value, onChange, onSend, disabled = false, placeholder = "Ty
 
   const handleBlur = (): void => {
     setIsFocused(false);
+  };
+
+  const handleModelChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
+    onModelChange(e.target.value);
   };
 
   useEffect(() => {
@@ -113,6 +136,31 @@ function InputBar({ value, onChange, onSend, disabled = false, placeholder = "Ty
       </div>
 
       <div className="flex items-center gap-2 mt-3 pt-2 border-t border-[var(--border-color)]">
+        {/* Model Selection */}
+        <div className="relative">
+          <select
+            className={clsx(
+              "appearance-none bg-[var(--bg-tertiary)] border border-[var(--border-color)]",
+              "rounded-lg px-3 py-1.5 pr-8 text-xs font-medium min-w-[180px]",
+              "text-[var(--text-color)] cursor-pointer",
+              "focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent",
+              "transition-all duration-200",
+              disabled && "cursor-not-allowed opacity-50"
+            )}
+            value={selectedModelId}
+            onChange={handleModelChange}
+            disabled={disabled}
+          >
+            {availableModels.map((model) => (
+              <option key={model.value} value={model.value}>
+                {model.label}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-3 h-3 pointer-events-none" 
+            style={{ color: "var(--text-secondary)" }} />
+        </div>
+
         <motion.button
           whileHover={{ scale: disabled ? 1 : 1.05 }}
           whileTap={{ scale: disabled ? 1 : 0.95 }}
