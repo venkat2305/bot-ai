@@ -4,6 +4,7 @@ import { useState, useEffect, use } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import SideBar from "@/components/chat/SideBar";
 import ConversationContainer from "@/components/chat/ConversationContainer";
+import AlertDialog from '@/components/ui/AlertDialog';
 
 interface Chat {
   id: string;
@@ -16,6 +17,10 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
   const [currentChatId, setCurrentChatId] = useState<string | undefined>(resolvedParams.chatId);
   const [conversationKey, setConversationKey] = useState<number>(Date.now());
+  const [chatRefreshKey, setChatRefreshKey] = useState<number>(0); // New state variable
+
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [chatToDeleteId, setChatToDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     const previousChatId = currentChatId;
@@ -34,6 +39,43 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
 
   const toggleSidebar = (): void => {
     setSidebarCollapsed((prev) => !prev);
+  };
+
+  const openDeleteConfirmModal = (chatId: string): void => {
+    setChatToDeleteId(chatId);
+    setIsConfirmModalOpen(true);
+  };
+
+  const closeDeleteConfirmModal = (): void => {
+    setIsConfirmModalOpen(false);
+    setChatToDeleteId(null);
+  };
+
+  const confirmDeleteChat = async (): Promise<void> => {
+    if (!chatToDeleteId) return;
+    closeDeleteConfirmModal();
+
+    try {
+      const response = await fetch(`/api/chat/${chatToDeleteId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        // Assuming you have a way to refresh recent chats in SideBar or handle state globally
+        // For now, we'll just redirect if the current chat was deleted.
+        if (currentChatId === chatToDeleteId) {
+          window.location.href = '/'; // Force reload and redirect to home
+        }
+        setChatRefreshKey((prev) => prev + 1); // Increment to trigger refresh
+        // You might want to trigger a re-fetch of chats in SideBar here
+      } else {
+        console.error('Failed to delete chat');
+      }
+    } catch (error) {
+      console.error('Error deleting chat:', error);
+    } finally {
+      setChatToDeleteId(null);
+    }
   };
 
   useEffect(() => {
@@ -58,6 +100,8 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
             collapsed={sidebarCollapsed}
             onToggleCollapse={toggleSidebar}
             currentChatId={currentChatId}
+            onOpenDeleteConfirm={openDeleteConfirmModal}
+            refreshChatsTrigger={chatRefreshKey} // Pass the new prop
           />
         </div>
       </motion.div>
@@ -76,6 +120,14 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
           </motion.div>
         </AnimatePresence>
       </div>
+      <AlertDialog
+        isOpen={isConfirmModalOpen}
+        onClose={closeDeleteConfirmModal}
+        onConfirm={confirmDeleteChat}
+        title="Confirm Deletion"
+        description="Are you sure you want to delete this chat? This action cannot be undone."
+        confirmText="Delete"
+      />
     </div>
   );
 } 

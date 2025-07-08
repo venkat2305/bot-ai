@@ -30,6 +30,8 @@ interface SideBarProps {
   collapsed: boolean;
   onToggleCollapse: () => void;
   currentChatId?: string;
+  onOpenDeleteConfirm: (chatId: string) => void; // New prop
+  refreshChatsTrigger?: number; // New prop
 }
 
 function UserAuth({ collapsed }: { collapsed: boolean }) {
@@ -104,6 +106,8 @@ function SideBar({
   collapsed, 
   onToggleCollapse,
   currentChatId,
+  onOpenDeleteConfirm,
+  refreshChatsTrigger,
 }: SideBarProps) {
   const [recentChats, setRecentChats] = useState<Chat[]>([]);
   const { data: session, status } = useSession();
@@ -118,19 +122,21 @@ function SideBar({
     return () => {
       window.removeEventListener('chat-created', handleChatCreated);
     };
-  }, [status]);
+  }, [status, refreshChatsTrigger]); // Add refreshChatsTrigger to dependencies
 
   const loadRecentChats = async (): Promise<void> => {
-    try {
-      const response = await fetch('/api/chats');
-      if (response.ok) {
-        const chats = await response.json();
-        setRecentChats(chats);
-      } else {
-        console.error('Failed to fetch recent chats');
+    if (status === "authenticated") {
+      try {
+        const response = await fetch('/api/chats');
+        if (response.ok) {
+          const chats = await response.json();
+          setRecentChats(chats);
+        } else {
+          console.error('Failed to fetch recent chats');
+        }
+      } catch (error) {
+        console.error('Error fetching recent chats:', error);
       }
-    } catch (error) {
-      console.error('Error fetching recent chats:', error);
     }
   };
 
@@ -147,23 +153,7 @@ function SideBar({
     chatId: string
   ): Promise<void> => {
     e.stopPropagation();
-    try {
-      const response = await fetch(`/api/chat/${chatId}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        setRecentChats((prev) => prev.filter((c) => c.uuid !== chatId));
-        if (currentChatId === chatId) {
-          router.push('/');
-        }
-      } else {
-        console.error('Failed to delete chat');
-        // Handle error, maybe show a notification
-      }
-    } catch (error) {
-      console.error('Error deleting chat:', error);
-    }
+    onOpenDeleteConfirm(chatId); // Use new prop
   };
 
   const formatDate = (dateString: string): string => {
