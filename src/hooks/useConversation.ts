@@ -138,9 +138,10 @@ export default function useConversation(chatId: string | undefined) {
             // For non-reasoning models, just update content normally
             setMessages((prevMessages) => {
               const newMessages = [...prevMessages];
-              const lastMessage = newMessages[newMessages.length - 1];
+              const lastMessage = { ...newMessages[newMessages.length - 1] }; // Create a new object
               if (lastMessage.role === 'assistant' && lastMessage.isStreaming) {
                 lastMessage.content = fullContent;
+                newMessages[newMessages.length - 1] = lastMessage;
               }
               return newMessages;
             });
@@ -210,12 +211,13 @@ export default function useConversation(chatId: string | undefined) {
 
           setMessages((prevMessages) => {
             const newMessages = [...prevMessages];
-            const lastMessage = newMessages[newMessages.length - 1];
+            const lastMessage = { ...newMessages[newMessages.length - 1] }; // Create a new object
             if (lastMessage.role === 'assistant' && lastMessage.isStreaming) {
               lastMessage.content = fullContent;
               lastMessage.reasoningContent = reasoningBuffer;
               lastMessage.mainContent = mainBuffer;
               lastMessage.hasActiveReasoning = isInsideThink;
+              newMessages[newMessages.length - 1] = lastMessage;
             }
             return newMessages;
           });

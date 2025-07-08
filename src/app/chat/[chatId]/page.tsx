@@ -13,7 +13,7 @@ interface Chat {
 
 export default function ChatPage({ params }: { params: Promise<{ chatId: string }> }) {
   const resolvedParams = use(params);
-  const [themeMode, setThemeMode] = useState<"light" | "dark">("light");
+  const [themeMode, setThemeMode] = useState<"light" | "dark">("dark");
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
   const [currentChatId, setCurrentChatId] = useState<string | undefined>(resolvedParams.chatId);
   const [conversationKey, setConversationKey] = useState<number>(Date.now());
