@@ -32,29 +32,29 @@ export interface ModelConfig {
 export const MODEL_CONFIGS: ModelConfig[] = [
   // Groq Models
   {
-    id: 'llama-3.3-70b-versatile',
-    name: 'llama-3.3-70b-versatile',
-    displayName: 'Llama 3.3 70B Versatile',
+    id: 'meta-llama/llama-4-maverick-17b-128e-instruct',
+    name: 'meta-llama/llama-4-maverick-17b-128e-instruct',
+    displayName: 'Llama 4 Maverick 17B Instruct',
     serviceProvider: 'groq',
-    description: 'Meta\'s latest large language model with excellent reasoning capabilities and versatile performance across various tasks.',
+    description: 'Meta\'s new Llama 4 Maverick model, optimized for instruction following and general-purpose tasks.',
     contextWindow: 131072,
-    maxCompletionTokens: 32768,
+    maxCompletionTokens: 8192,
     capabilities: {
       textInput: true,
       textOutput: true,
-      imageInput: false,
+      imageInput: true,
       imageOutput: false,
       audioInput: false,
       audioOutput: false,
       transcription: false,
       pdfSupport: false,
       searchSupport: false,
-      isReasoningModel: true,
+      isReasoningModel: false,
     },
     isActive: true,
     apiEndpoint: '/api/chat/groq',
     ownedBy: 'Meta',
-    created: 1733447754,
+    created: Date.now(),
   },
   {
     id: 'llama-3.1-8b-instant',
@@ -296,4 +296,4 @@ export const getSearchCapableModels = (): ModelConfig[] => {
 };
 
 // Default model selection
-export const DEFAULT_MODEL_ID = 'llama-3.3-70b-versatile'; 
+export const DEFAULT_MODEL_ID = 'gemini-2.5-flash'; 

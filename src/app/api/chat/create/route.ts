@@ -1,8 +1,8 @@
 import { getServerSession } from 'next-auth';
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
-import Chat from '@/models/Chat';
-import User from '@/models/User';
+import Chat from '@/server/models/Chat';
+import User from '@/server/models/User';
 import { authOptions } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {

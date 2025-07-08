@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Zap, X } from "lucide-react";
 import InputBar from "./InputBar";
 import ConversationComp from "./ConversationComp";
-import useConversation from "../../hooks/useConversation";
+import useConversation, { ImageAttachment } from "../../hooks/useConversation";
 import { useRouter } from 'next/navigation';
 
 interface ConversationContainerProps {
@@ -33,8 +33,8 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
 
   const [inputText, setInputText] = React.useState<string>("");
 
-  const handleSend = async (question: string) => {
-    await sendMessage(question);
+  const handleSend = async (question: string, images?: ImageAttachment[]) => {
+    await sendMessage(question, images);
   };
 
   const getModelOptions = (): SelectOption[] => {
@@ -70,6 +70,7 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
                   selectedModelId={selectedModelId}
                   onModelChange={setSelectedModelId}
                   availableModels={getModelOptions()}
+                  supportsImages={selectedModel?.capabilities.imageInput || false}
                 />
               </div>
             </motion.div>
@@ -86,6 +87,7 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
                   key={index}
                   role={message.role}
                   content={message.content}
+                  images={message.images}
                   isStreaming={message.isStreaming}
                   isReasoningModel={selectedModel?.capabilities.isReasoningModel}
                   reasoningContent={message.reasoningContent}
@@ -106,10 +108,11 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
                 onChange={setInputText}
                 onSend={handleSend}
                 disabled={loading || isStreaming}
-                placeholder="Type your message..."
+                placeholder="Ask a follow-up question..."
                 selectedModelId={selectedModelId}
                 onModelChange={setSelectedModelId}
                 availableModels={getModelOptions()}
+                supportsImages={selectedModel?.capabilities.imageInput || false}
               />
             </div>
           </div>

@@ -16,6 +16,24 @@ const MessageSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    images: [{
+      url: {
+        type: String,
+        required: true,
+      },
+      filename: {
+        type: String,
+        required: true,
+      },
+      mimeType: {
+        type: String,
+        required: true,
+      },
+      size: {
+        type: Number,
+        required: true,
+      }
+    }],
   },
   { timestamps: true }
 );

@@ -2,9 +2,17 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { ModelConfig, getActiveModels, getModelById, DEFAULT_MODEL_ID } from '@/config/models';
 import { useStreamingChat } from './useStreamingChat';
 
+export interface ImageAttachment {
+  url: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+}
+
 export interface Message {
   role: 'user' | 'assistant';
   content: string;
+  images?: ImageAttachment[];
   isStreaming?: boolean;
   reasoningContent?: string;
   mainContent?: string;
@@ -71,10 +79,10 @@ export default function useConversation(chatId: string | undefined) {
   }, [chatId]);
 
   const sendMessage = useCallback(
-    async (input: string) => {
+    async (input: string, images?: ImageAttachment[]) => {
       const currentChatId = chatId;
 
-      if (!input.trim()) return;
+      if (!input.trim() && (!images || images.length === 0)) return;
       if (!selectedModel) {
         console.error('No model selected');
         return;
@@ -86,7 +94,11 @@ export default function useConversation(chatId: string | undefined) {
       
       const isNewChat = messages.length === 0;
 
-      const userMessage: Message = { role: 'user', content: input };
+      const userMessage: Message = { 
+        role: 'user', 
+        content: input,
+        ...(images && images.length > 0 && { images })
+      };
       setMessages((prevMessages) => [...prevMessages, userMessage]);
       setLoading(true);
 
@@ -108,7 +120,11 @@ export default function useConversation(chatId: string | undefined) {
         const allMessages = [
           ...messages,
           userMessage
-        ].map(({ role, content }) => ({ role, content }));
+        ].map(({ role, content, images }) => ({ 
+          role, 
+          content,
+          ...(images && images.length > 0 && { images })
+        }));
 
         // Create streaming assistant message
         const streamingMessage: Message = {

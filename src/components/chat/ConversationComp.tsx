@@ -12,10 +12,12 @@ import {
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import clsx from "clsx";
+import { ImageAttachment } from "@/hooks/useConversation";
 
 interface ConversationCompProps {
   role: "user" | "assistant";
   content: string;
+  images?: ImageAttachment[];
   isStreaming?: boolean;
   isReasoningModel?: boolean;
   reasoningContent?: string;
@@ -179,9 +181,30 @@ const MainContent: React.FC<{
   </div>
 );
 
+const ImageGallery: React.FC<{ images: ImageAttachment[] }> = ({ images }) => (
+  <div className="mb-3 flex flex-wrap gap-2">
+    {images.map((image, index) => (
+      <div key={index} className="relative group">
+        <img
+          src={image.url}
+          alt={image.filename}
+          className="max-w-[200px] max-h-[200px] object-cover rounded-lg border border-[var(--border-color)] shadow-sm"
+          onClick={() => window.open(image.url, '_blank')}
+          style={{ cursor: 'pointer' }}
+        />
+        <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white text-xs p-1 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="truncate">{image.filename}</div>
+          <div className="text-gray-300">{(image.size / 1024).toFixed(1)}KB</div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
 const ConversationComp: React.FC<ConversationCompProps> = ({
   role,
   content,
+  images,
   isStreaming = false,
   isReasoningModel = false,
   reasoningContent: propReasoningContent,
@@ -213,15 +236,16 @@ const ConversationComp: React.FC<ConversationCompProps> = ({
         "inline-block max-w-full p-4 rounded-2xl shadow-sm border",
         "bg-[var(--card-bg)] border-[var(--border-color)]",
         isUser
-          ? "rounded-br-sm bg-[#F4F4F4] dark:from-blue-900/20 dark:to-purple-900/20"
-          : "rounded-bl-sm"
+          ? "bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200"
+          : ""
       ),
     [isUser]
   );
 
-  const handleCopy = useCallback((text: string): void => {
+  const handleCopy = useCallback((text: string) => {
     navigator.clipboard.writeText(text);
     setCopied(true);
+    setTimeout(() => setCopied(false), COPY_TIMEOUT);
   }, []);
 
   const toggleReasoning = useCallback(() => {
@@ -235,20 +259,17 @@ const ConversationComp: React.FC<ConversationCompProps> = ({
     }
   }, [hasActiveReasoning, reasoningContent]);
 
-  // Reset copied state after timeout
-  useEffect(() => {
-    if (copied) {
-      const timer = setTimeout(() => setCopied(false), COPY_TIMEOUT);
-      return () => clearTimeout(timer);
-    }
-  }, [copied]);
-
   return (
     <motion.div {...messageVariants} className={containerClasses}>
       <Avatar isUser={isUser} />
 
       <div className={messageClasses}>
         <div className={bubbleClasses}>
+          {/* Display images if present */}
+          {images && images.length > 0 && (
+            <ImageGallery images={images} />
+          )}
+
           {reasoningContent && (
             <ReasoningSection
               reasoningContent={reasoningContent}

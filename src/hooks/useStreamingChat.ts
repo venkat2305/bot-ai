@@ -1,9 +1,11 @@
 import { useState, useCallback, useRef } from 'react';
 import { ModelConfig } from '@/config/models';
+import { ImageAttachment } from './useConversation';
 
 export interface StreamingMessage {
   role: 'user' | 'assistant';
   content: string;
+  images?: ImageAttachment[];
   isStreaming?: boolean;
 }
 
@@ -33,6 +35,15 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
     options.onStreamStart?.();
 
     try {
+      // Transform messages to include images if present
+      const transformedMessages = messages.map(message => {
+        const baseMessage = { role: message.role, content: message.content };
+        if (message.images && message.images.length > 0) {
+          return { ...baseMessage, images: message.images };
+        }
+        return baseMessage;
+      });
+
       const response = await fetch(model.apiEndpoint, {
         method: 'POST',
         headers: {
@@ -40,7 +51,7 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
         },
         body: JSON.stringify({
           model: model.name,
-          messages: messages.map(({ role, content }) => ({ role, content })),
+          messages: transformedMessages,
         }),
         signal: abortControllerRef.current.signal,
       });

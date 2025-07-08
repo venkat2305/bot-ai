@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
-import Chat from '@/models/Chat';
-import Message from '@/models/Message';
+import Chat from '@/server/models/Chat';
+import Message from '@/server/models/Message';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+
+interface ImageAttachment {
+  url: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+}
 
 export async function GET(
   req: NextRequest,
@@ -31,7 +38,21 @@ export async function GET(
       createdAt: 'asc',
     });
 
-    return NextResponse.json(messages, { status: 200 });
+    // Transform messages to match frontend interface
+    const transformedMessages = messages.map(msg => ({
+      role: msg.role,
+      content: msg.content,
+      ...(msg.images && msg.images.length > 0 && { 
+        images: msg.images.map((img: ImageAttachment) => ({
+          url: img.url,
+          filename: img.filename,
+          mimeType: img.mimeType,
+          size: img.size
+        }))
+      }),
+    }));
+
+    return NextResponse.json(transformedMessages, { status: 200 });
   } catch (error) {
     console.error('Error fetching messages:', error);
     return NextResponse.json(
@@ -52,7 +73,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { role, content, title } = await req.json();
+    const { role, content, title, images } = await req.json();
 
     if (!role || !content) {
       return NextResponse.json(
@@ -89,11 +110,26 @@ export async function POST(
       chatId: chat._id,
       role,
       content,
+      ...(images && images.length > 0 && { images }),
     });
 
     await newMessage.save();
 
-    return NextResponse.json(newMessage, { status: 201 });
+    // Transform response to match frontend interface
+    const transformedMessage = {
+      role: newMessage.role,
+      content: newMessage.content,
+      ...(newMessage.images && newMessage.images.length > 0 && { 
+        images: newMessage.images.map((img: ImageAttachment) => ({
+          url: img.url,
+          filename: img.filename,
+          mimeType: img.mimeType,
+          size: img.size
+        }))
+      }),
+    };
+
+    return NextResponse.json(transformedMessage, { status: 201 });
   } catch (error) {
     console.error('Error adding message:', error);
     return NextResponse.json(

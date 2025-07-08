@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
-import Chat from '@/models/Chat';
-import Message from '@/models/Message';
+import Chat from '@/server/models/Chat';
+import Message from '@/server/models/Message';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
