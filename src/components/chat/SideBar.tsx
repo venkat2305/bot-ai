@@ -175,22 +175,6 @@ function SideBar({
     onOpenDeleteConfirm(chatId);
   };
 
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) {
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } else if (diffDays === 1) {
-      return 'Yesterday';
-    } else if (diffDays < 7) {
-      return `${diffDays} days ago`;
-    } else {
-      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-    }
-  };
 
   return (
     <div className={clsx(
@@ -285,10 +269,6 @@ function SideBar({
                          style={{ color: "var(--text-color)" }}>
                         {chat.title}
                       </p>
-                      {/* <p className="text-xs truncate mt-1" 
-                         style={{ color: "var(--text-muted)" }}>
-                        {formatDate(chat.updatedAt)}
-                      </p> */}
                     </div>
                     <motion.button
                       initial={{ opacity: 0, scale: 0.8 }}
