@@ -76,7 +76,7 @@ function InputBar({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className={clsx(
-        "relative p-4 rounded-2xl border transition-all duration-300",
+        "relative p-3 rounded-xl border transition-all duration-300",
         "bg-[var(--card-bg)] border-[var(--border-color)]",
         isFocused && "ring-2 ring-[var(--primary-color)] ring-opacity-50",
         disabled && "opacity-50 cursor-not-allowed"
@@ -90,7 +90,7 @@ function InputBar({
             className={clsx(
               "w-full resize-none border-0 bg-transparent outline-none",
               "text-[var(--text-color)] placeholder-[var(--text-muted)]",
-              "text-sm leading-6 min-h-[24px] max-h-[120px]",
+              "text-sm leading-5 min-h-[20px] max-h-[120px]",
               disabled && "cursor-not-allowed"
             )}
             placeholder={placeholder}
@@ -102,17 +102,6 @@ function InputBar({
             disabled={disabled}
             rows={1}
           />
-          
-          {value.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="absolute bottom-0 right-0 text-xs"
-              style={{ color: "var(--text-muted)" }}
-            >
-              {value.length} characters
-            </motion.div>
-          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -122,8 +111,8 @@ function InputBar({
             onClick={handleSubmit}
             disabled={!value.trim() || disabled}
             className={clsx(
-              "flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm",
-              "transition-all duration-200 min-w-[80px] justify-center",
+              "flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm",
+              "transition-all duration-200 min-w-[70px] justify-center",
               value.trim() && !disabled
                 ? "bg-gradient-to-r from-[var(--primary-color)] to-[var(--primary-hover)] text-white shadow-lg hover:shadow-xl"
                 : "bg-[var(--bg-tertiary)] text-[var(--text-muted)] cursor-not-allowed"
@@ -135,15 +124,15 @@ function InputBar({
         </div>
       </div>
 
-      <div className="flex items-center gap-2 mt-3 pt-2 border-t border-[var(--border-color)]">
+      <div className="flex items-center gap-2 mt-2 pt-2 border-t border-[var(--border-color)]">
         {/* Model Selection */}
         <div className="relative">
           <select
             className={clsx(
               "appearance-none bg-[var(--bg-tertiary)] border border-[var(--border-color)]",
-              "rounded-lg px-3 py-1.5 pr-8 text-xs font-medium min-w-[180px]",
+              "rounded-md px-2 py-1 pr-6 text-xs font-medium min-w-[160px]",
               "text-[var(--text-color)] cursor-pointer",
-              "focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent",
+              "focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)] focus:border-transparent",
               "transition-all duration-200",
               disabled && "cursor-not-allowed opacity-50"
             )}
@@ -157,7 +146,7 @@ function InputBar({
               </option>
             ))}
           </select>
-          <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-3 h-3 pointer-events-none" 
+          <ChevronDown className="absolute right-1.5 top-1/2 transform -translate-y-1/2 w-3 h-3 pointer-events-none" 
             style={{ color: "var(--text-secondary)" }} />
         </div>
 
@@ -166,7 +155,7 @@ function InputBar({
           whileTap={{ scale: disabled ? 1 : 0.95 }}
           disabled={disabled}
           className={clsx(
-            "flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-all duration-200",
+            "flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-all duration-200",
             disabled 
               ? "cursor-not-allowed opacity-50" 
               : "hover:bg-[var(--bg-tertiary)]"
@@ -174,13 +163,13 @@ function InputBar({
           style={{ color: "var(--text-muted)" }}
         >
           <Paperclip className="w-3 h-3" />
-          Attach File
+          Attach
         </motion.button>
         
         <div className="flex-1"></div>
         
         <div className="text-xs" style={{ color: "var(--text-muted)" }}>
-          Press Enter to send, Shift+Enter for new line
+          ⏎ Send • ⇧⏎ New line
         </div>
       </div>
     </motion.div>
