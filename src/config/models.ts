@@ -11,11 +11,13 @@ export interface ModelCapabilities {
   isReasoningModel: boolean;
 }
 
+export type ServiceProvider = 'groq' | 'openrouter' | 'perplexity' | 'cerebras' | 'gemini';
+
 export interface ModelConfig {
   id: string;
   name: string;
   displayName: string;
-  serviceProvider: 'groq' | 'openrouter' | 'perplexity' | 'cerebras';
+  serviceProvider: ServiceProvider;
   description: string;
   contextWindow: number;
   maxCompletionTokens: number;
@@ -233,6 +235,33 @@ export const MODEL_CONFIGS: ModelConfig[] = [
     ownedBy: 'Alibaba',
     created: 1735689600,
   },
+
+  // Gemini Models
+  {
+    id: 'gemini-2.5-flash',
+    name: 'gemini-2.5-flash',
+    displayName: 'Gemini 2.5 Flash',
+    serviceProvider: 'gemini',
+    description: 'Google\'s fastest multimodal model with excellent performance across text, image, and code tasks. Optimized for speed while maintaining high quality responses and supporting large context windows.',
+    contextWindow: 1000000,
+    maxCompletionTokens: 8192,
+    capabilities: {
+      textInput: true,
+      textOutput: true,
+      imageInput: true,
+      imageOutput: false,
+      audioInput: false,
+      audioOutput: false,
+      transcription: false,
+      pdfSupport: true,
+      searchSupport: false,
+      isReasoningModel: false,
+    },
+    isActive: true,
+    apiEndpoint: '/api/chat/gemini',
+    ownedBy: 'Google',
+    created: 1735689600,
+  },
 ];
 
 // Helper functions
@@ -244,7 +273,7 @@ export const getModelById = (id: string): ModelConfig | undefined => {
   return MODEL_CONFIGS.find(model => model.id === id);
 };
 
-export const getModelsByProvider = (provider: 'groq' | 'openrouter' | 'perplexity' | 'cerebras'): ModelConfig[] => {
+export const getModelsByProvider = (provider: ServiceProvider): ModelConfig[] => {
   return MODEL_CONFIGS.filter(model => model.serviceProvider === provider && model.isActive);
 };
 
