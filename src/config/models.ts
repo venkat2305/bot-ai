@@ -308,6 +308,30 @@ export const MODEL_CONFIGS: ModelConfig[] = [
     ownedBy: 'Google',
     created: 1735689600,
   },
+  {
+    id: 'gemini-2.5-pro',
+    name: 'gemini-2.5-pro',
+    displayName: 'Gemini 2.5 Pro',
+    serviceProvider: 'gemini',
+    description: 'Google’s advanced Gemini 2.5 Pro multimodal model with enhanced reasoning, larger context, and premium capabilities.',
+    contextWindow: 1000000,        // adjust as needed
+    maxCompletionTokens: 16384,     // adjust as needed
+    capabilities: {
+      textInput: true,
+      textOutput: true,
+      imageInput: true,
+      imageOutput: false,
+      audioInput: false,
+      audioOutput: false,
+      transcription: false,
+      pdfSupport: true,
+      searchSupport: true,
+      isReasoningModel: true,
+    },
+    isActive: true,
+    apiEndpoint: '/api/chat/gemini',
+    ownedBy: 'Google',
+  },  
 ];
 
 // Helper functions
