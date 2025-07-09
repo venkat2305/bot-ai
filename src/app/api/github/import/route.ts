@@ -1,14 +1,26 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { Octokit } from '@octokit/rest';
-import { PutObjectCommand } from '@aws-sdk/client-s3';
-import { v4 as uuidv4 } from 'uuid';
-import treeify from 'treeify';
-import { getR2Client, getR2Config } from '@/lib/r2Client';
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { Octokit } from "@octokit/rest";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { v4 as uuidv4 } from "uuid";
+import treeify from "treeify";
+import { getR2Client, getR2Config } from "@/lib/r2Client";
 
 // Supported file extensions
-const SUPPORTED_EXTENSIONS = ['.js', '.py', '.java', '.cpp', '.html', '.css', '.ts', '.jsx', '.tsx'];
+const SUPPORTED_EXTENSIONS = [
+  ".js",
+  ".py",
+  ".java",
+  ".cpp",
+  ".html",
+  ".css",
+  ".ts",
+  ".jsx",
+  ".tsx",
+  ".md",
+  ".go",
+];
 
 // Max file size (1MB per file)
 const MAX_FILE_SIZE = 1024 * 1024;
@@ -33,42 +45,46 @@ interface GitHubImportResponse {
   error?: string;
 }
 
-
-
 function parseGitHubUrl(url: string): { owner: string; repo: string } {
-  const match = url.match(/github\.com\/([^\/]+)\/([^\/]+)/);
-  if (!match) {
-    throw new Error('Invalid GitHub URL format');
+  try {
+    const parsed = new URL(url);
+    const pathParts = parsed.pathname.split("/").filter(Boolean);
+
+    if (pathParts.length < 2) {
+      throw new Error("Invalid GitHub URL format");
+    }
+
+    const [owner, repo] = pathParts;
+    return { owner, repo: repo.replace(/\.git$/, "") };
+  } catch (err) {
+    throw new Error("Invalid GitHub URL format");
   }
-  
-  const [, owner, repo] = match;
-  return { owner, repo: repo.replace(/\.git$/, '') };
 }
 
 function shouldIncludeFile(path: string): boolean {
-  const ext = path.substring(path.lastIndexOf('.'));
+  const ext = path.substring(path.lastIndexOf("."));
   return SUPPORTED_EXTENSIONS.includes(ext);
 }
 
 function generateFolderStructure(files: GitHubFile[]): string {
   const tree: any = {};
-  
+
   // Sort files by depth (level) and then alphabetically
   const sortedFiles = files.sort((a, b) => {
-    const aDepth = a.path.split('/').length;
-    const bDepth = b.path.split('/').length;
-    
+    const aDepth = a.path.split("/").length;
+    const bDepth = b.path.split("/").length;
+
     if (aDepth !== bDepth) {
       return aDepth - bDepth; // Sort by depth first
     }
-    
+
     return a.path.localeCompare(b.path); // Then alphabetically
   });
-  
-  sortedFiles.forEach(file => {
-    const parts = file.path.split('/');
+
+  sortedFiles.forEach((file) => {
+    const parts = file.path.split("/");
     let current = tree;
-    
+
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i];
       if (i === parts.length - 1) {
@@ -83,7 +99,7 @@ function generateFolderStructure(files: GitHubFile[]): string {
       }
     }
   });
-  
+
   return treeify.asTree(tree, true, true);
 }
 
@@ -105,7 +121,7 @@ async function fetchGitHubFiles(
       owner,
       repo,
       tree_sha: branch,
-      recursive: 'true',
+      recursive: "true",
     });
 
     const files: GitHubFile[] = [];
@@ -113,16 +129,19 @@ async function fetchGitHubFiles(
 
     // Filter for supported file types
     const supportedFiles = tree.data.tree.filter(
-      item => item.type === 'blob' && item.path && shouldIncludeFile(item.path)
+      (item) =>
+        item.type === "blob" && item.path && shouldIncludeFile(item.path)
     );
 
-    console.log(`Found ${supportedFiles.length} supported files in ${owner}/${repo}`);
+    console.log(
+      `Found ${supportedFiles.length} supported files in ${owner}/${repo}`
+    );
 
     // Fetch file contents in parallel (with some throttling)
     const batchSize = 10;
     for (let i = 0; i < supportedFiles.length; i += batchSize) {
       const batch = supportedFiles.slice(i, i + batchSize);
-      
+
       const batchPromises = batch.map(async (file) => {
         try {
           if (!file.path || !file.sha) return;
@@ -136,13 +155,18 @@ async function fetchGitHubFiles(
 
           // Skip if file is too large
           if (file.size && file.size > MAX_FILE_SIZE) {
-            console.log(`Skipping large file: ${file.path} (${file.size} bytes)`);
+            console.log(
+              `Skipping large file: ${file.path} (${file.size} bytes)`
+            );
             return;
           }
 
           // Decode content
-          const decodedContent = Buffer.from(content.data.content, 'base64').toString('utf-8');
-          
+          const decodedContent = Buffer.from(
+            content.data.content,
+            "base64"
+          ).toString("utf-8");
+
           files.push({
             path: file.path,
             content: decodedContent,
@@ -159,7 +183,7 @@ async function fetchGitHubFiles(
 
     return files;
   } catch (error) {
-    console.error('Error fetching GitHub files:', error);
+    console.error("Error fetching GitHub files:", error);
     throw error;
   }
 }
@@ -173,7 +197,7 @@ async function uploadToR2(content: string, fileName: string): Promise<string> {
     Bucket: bucketName,
     Key: key,
     Body: content,
-    ContentType: 'text/plain',
+    ContentType: "text/plain",
   });
 
   await s3Client.send(uploadCommand);
@@ -188,63 +212,74 @@ function formatRepositoryContent(
   files: GitHubFile[]
 ): string {
   const folderStructure = generateFolderStructure(files);
-  
+
   let content = `# GitHub Repository: ${owner}/${repo} (${branch})\n\n`;
   content += `## Folder Structure\n\n\`\`\`\n${folderStructure}\`\`\`\n\n`;
   content += `## Files (${files.length} total)\n\n`;
-  
+
   // Sort files by depth (level) and then alphabetically for content display
   const sortedFiles = files.sort((a, b) => {
-    const aDepth = a.path.split('/').length;
-    const bDepth = b.path.split('/').length;
-    
+    const aDepth = a.path.split("/").length;
+    const bDepth = b.path.split("/").length;
+
     if (aDepth !== bDepth) {
       return aDepth - bDepth; // Sort by depth first
     }
-    
+
     return a.path.localeCompare(b.path); // Then alphabetically
   });
-  
+
   sortedFiles.forEach((file, index) => {
     content += `### ${file.path}\n\n`;
     content += `\`\`\`\n${file.content}\n\`\`\`\n\n`;
-    
+
     if (index < sortedFiles.length - 1) {
-      content += '---\n\n';
+      content += "---\n\n";
     }
   });
-  
+
   return content;
 }
 
-export async function POST(req: NextRequest): Promise<NextResponse<GitHubImportResponse>> {
+export async function POST(
+  req: NextRequest
+): Promise<NextResponse<GitHubImportResponse>> {
   try {
     // Check authentication
     const session = await getServerSession(authOptions);
     if (!session || !session.user) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Unauthorized' 
-      }, { status: 401 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Unauthorized",
+        },
+        { status: 401 }
+      );
     }
 
     // Check GitHub PAT
     const GITHUB_PAT = process.env.GITHUB_PAT;
     if (!GITHUB_PAT) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'GitHub Personal Access Token not configured' 
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "GitHub Personal Access Token not configured",
+        },
+        { status: 500 }
+      );
     }
 
     // Parse request
     const { repoUrl, branch }: GitHubImportRequest = await req.json();
 
     if (!repoUrl) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Repository URL is required' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Repository URL is required",
+        },
+        { status: 400 }
+      );
     }
 
     // Parse GitHub URL
@@ -255,16 +290,21 @@ export async function POST(req: NextRequest): Promise<NextResponse<GitHubImportR
       auth: GITHUB_PAT,
     });
 
-    console.log(`Fetching repository: ${owner}/${repo}${branch ? ` (${branch})` : ''}`);
+    console.log(
+      `Fetching repository: ${owner}/${repo}${branch ? ` (${branch})` : ""}`
+    );
 
     // Fetch repository files
     const files = await fetchGitHubFiles(octokit, owner, repo, branch);
 
     if (files.length === 0) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'No supported files found in repository' 
-      }, { status: 404 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "No supported files found in repository",
+        },
+        { status: 404 }
+      );
     }
 
     // Get actual branch name (in case it was auto-detected)
@@ -272,10 +312,15 @@ export async function POST(req: NextRequest): Promise<NextResponse<GitHubImportR
     const actualBranch = branch || repoInfo.data.default_branch;
 
     // Format content
-    const formattedContent = formatRepositoryContent(owner, repo, actualBranch, files);
+    const formattedContent = formatRepositoryContent(
+      owner,
+      repo,
+      actualBranch,
+      files
+    );
 
     // Generate unique filename
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const fileName = `${owner}-${repo}-${actualBranch}-${timestamp}.txt`;
 
     // Upload to R2
@@ -284,7 +329,9 @@ export async function POST(req: NextRequest): Promise<NextResponse<GitHubImportR
     // Calculate total size
     const totalSize = files.reduce((sum, file) => sum + file.size, 0);
 
-    console.log(`Successfully imported ${files.length} files from ${owner}/${repo}`);
+    console.log(
+      `Successfully imported ${files.length} files from ${owner}/${repo}`
+    );
 
     return NextResponse.json({
       success: true,
@@ -293,27 +340,30 @@ export async function POST(req: NextRequest): Promise<NextResponse<GitHubImportR
       totalFiles: files.length,
       totalSize,
     });
-
   } catch (error) {
-    console.error('GitHub import error:', error);
-    
-    let errorMessage = 'Failed to import repository';
-    
+    console.error("GitHub import error:", error);
+
+    let errorMessage = "Failed to import repository";
+
     if (error instanceof Error) {
-      if (error.message.includes('Not Found')) {
-        errorMessage = 'Repository not found or not accessible';
-      } else if (error.message.includes('rate limit')) {
-        errorMessage = 'GitHub API rate limit exceeded. Please try again later.';
-      } else if (error.message.includes('Invalid GitHub URL')) {
+      if (error.message.includes("Not Found")) {
+        errorMessage = "Repository not found or not accessible";
+      } else if (error.message.includes("rate limit")) {
+        errorMessage =
+          "GitHub API rate limit exceeded. Please try again later.";
+      } else if (error.message.includes("Invalid GitHub URL")) {
         errorMessage = error.message;
       } else {
         errorMessage = error.message;
       }
     }
 
-    return NextResponse.json({ 
-      success: false, 
-      error: errorMessage 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: errorMessage,
+      },
+      { status: 500 }
+    );
   }
-} 
+}
