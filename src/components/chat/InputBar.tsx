@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Send, Paperclip, ChevronDown, X, Image as ImageIcon, FileText, Github } from "lucide-react";
+import { Send, Paperclip, ChevronDown, X, Image as ImageIcon, FileText, Square, Github } from "lucide-react";
 import clsx from "clsx";
 import { ImageAttachment, GitHubAttachment } from "@/types/chat";
 
@@ -16,6 +16,8 @@ interface InputBarProps {
   onChange: (text: string) => void;
   onSend: (question: string, images?: ImageAttachment[], githubAttachment?: GitHubAttachment) => void;
   disabled?: boolean;
+  isStreaming?: boolean;
+  onCancel?: () => void;
   placeholder?: string;
   selectedModelId: string;
   onModelChange: (modelId: string) => void;
@@ -30,7 +32,9 @@ function InputBar({
   value, 
   onChange, 
   onSend, 
-  disabled = false, 
+  disabled = false,
+  isStreaming = false,
+  onCancel,
   placeholder = "Type your message here...",
   selectedModelId,
   onModelChange,
@@ -47,22 +51,35 @@ function InputBar({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = (): void => {
-    if ((value.trim() !== "" || attachedImages.length > 0 || githubAttachment) && !disabled) {
-      onSend(value, attachedImages.length > 0 ? attachedImages : undefined, githubAttachment || undefined);
-      onChange("");
-      setAttachedImages([]);
+    // Don't send if streaming or disabled or no content
+    if (isStreaming || disabled || (!value.trim() && attachedImages.length === 0 && !githubAttachment)) {
+      return;
+    }
+    
+    onSend(value, attachedImages.length > 0 ? attachedImages : undefined, githubAttachment || undefined);
+    onChange("");
+    setAttachedImages([]);
+  };
+
+  const handleCancel = (): void => {
+    if (onCancel) {
+      onCancel();
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSubmit();
+      if (isStreaming) {
+        handleCancel();
+      } else {
+        handleSubmit();
+      }
     }
   };
 
   const handlePaste = async (e: React.ClipboardEvent<HTMLTextAreaElement>): Promise<void> => {
-    if (!supportsImages) return;
+    if (!supportsImages || isStreaming) return;
 
     const items = Array.from(e.clipboardData.items);
     const imageFiles = items
@@ -120,6 +137,8 @@ function InputBar({
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isStreaming) return;
+    
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
@@ -157,12 +176,13 @@ function InputBar({
   };
 
   const handleAttachClick = () => {
-    if (supportsImages && fileInputRef.current) {
+    if (supportsImages && fileInputRef.current && !isStreaming) {
       fileInputRef.current.click();
     }
   };
 
   const removeImage = (index: number) => {
+    if (isStreaming) return;
     setAttachedImages(prev => prev.filter((_, i) => i !== index));
   };
 
@@ -203,7 +223,7 @@ function InputBar({
                     {githubAttachment.totalSize && <span>• {(githubAttachment.totalSize / 1024).toFixed(1)}KB</span>}
                   </div>
                 </div>
-                {onRemoveGitHubAttachment && (
+                {onRemoveGitHubAttachment && !isStreaming && (
                   <button
                     onClick={onRemoveGitHubAttachment}
                     className="w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity ml-2 flex-shrink-0"
@@ -223,12 +243,14 @@ function InputBar({
                 alt={image.filename}
                 className="w-16 h-16 object-cover rounded-lg border border-[var(--border-color)]"
               />
-              <button
-                onClick={() => removeImage(index)}
-                className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <X className="w-3 h-3" />
-              </button>
+              {!isStreaming && (
+                <button
+                  onClick={() => removeImage(index)}
+                  className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
               <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white text-xs p-1 rounded-b-lg truncate">
                 {image.filename}
               </div>
@@ -239,7 +261,7 @@ function InputBar({
 
       <div className="flex items-end gap-3">
         <div className="flex-1 relative">
-          <textarea
+        <textarea
             ref={textareaRef}
             className={clsx(
               "w-full resize-none border-0 bg-transparent outline-none",
@@ -254,28 +276,44 @@ function InputBar({
             onPaste={handlePaste}
             onFocus={handleFocus}
             onBlur={handleBlur}
-            disabled={disabled}
+            // disabled={disabled}
             rows={1}
           />
         </div>
 
         <div className="flex items-center gap-2">
-          <motion.button
-            whileHover={{ scale: disabled ? 1 : 1.05 }}
-            whileTap={{ scale: disabled ? 1 : 0.95 }}
-            onClick={handleSubmit}
-            disabled={(!value.trim() && attachedImages.length === 0 && !githubAttachment) || disabled}
-            className={clsx(
-              "flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm",
-              "transition-all duration-200 min-w-[70px] justify-center",
-              (value.trim() || attachedImages.length > 0 || githubAttachment) && !disabled
-                ? "bg-gradient-to-r from-[var(--primary-color)] to-[var(--primary-hover)] text-white shadow-lg hover:shadow-xl"
-                : "bg-[var(--bg-tertiary)] text-[var(--text-muted)] cursor-not-allowed"
-            )}
-          >
-            <Send className="w-4 h-4" />
-            <span>{disabled ? "Sending..." : "Send"}</span>
-          </motion.button>
+          {isStreaming ? (
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleCancel}
+              className={clsx(
+                "flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm",
+                "transition-all duration-200 min-w-[70px] justify-center",
+                "bg-red-500 hover:bg-red-600 text-white shadow-lg hover:shadow-xl"
+              )}
+            >
+              <Square className="w-4 h-4" />
+              <span>Stop</span>
+            </motion.button>
+          ) : (
+            <motion.button
+              whileHover={{ scale: disabled ? 1 : 1.05 }}
+              whileTap={{ scale: disabled ? 1 : 0.95 }}
+              onClick={handleSubmit}
+              disabled={(!value.trim() && attachedImages.length === 0 && !githubAttachment) || disabled}
+              className={clsx(
+                "flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm",
+                "transition-all duration-200 min-w-[70px] justify-center",
+                (value.trim() || attachedImages.length > 0 || githubAttachment) && !disabled
+                  ? "bg-gradient-to-r from-[var(--primary-color)] to-[var(--primary-hover)] text-white shadow-lg hover:shadow-xl"
+                  : "bg-[var(--bg-tertiary)] text-[var(--text-muted)] cursor-not-allowed"
+              )}
+            >
+              <Send className="w-4 h-4" />
+              <span>{disabled ? "Sending..." : "Send"}</span>
+            </motion.button>
+          )}
         </div>
       </div>
 
@@ -289,11 +327,11 @@ function InputBar({
               "text-[var(--text-color)] cursor-pointer",
               "focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)] focus:border-transparent",
               "transition-all duration-200",
-              disabled && "cursor-not-allowed opacity-50"
+              (disabled || isStreaming) && "cursor-not-allowed opacity-50"
             )}
             value={selectedModelId}
             onChange={handleModelChange}
-            disabled={disabled}
+            disabled={disabled || isStreaming}
           >
             {availableModels.map((model) => (
               <option key={model.value} value={model.value}>
@@ -306,13 +344,13 @@ function InputBar({
         </div>
 
         <motion.button
-          whileHover={{ scale: disabled || !supportsImages ? 1 : 1.05 }}
-          whileTap={{ scale: disabled || !supportsImages ? 1 : 0.95 }}
+          whileHover={{ scale: disabled || !supportsImages || isStreaming ? 1 : 1.05 }}
+          whileTap={{ scale: disabled || !supportsImages || isStreaming ? 1 : 0.95 }}
           onClick={handleAttachClick}
-          disabled={disabled || !supportsImages || isUploading}
+          disabled={disabled || !supportsImages || isUploading || isStreaming}
           className={clsx(
             "flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-all duration-200",
-            disabled || !supportsImages
+            disabled || !supportsImages || isStreaming
               ? "cursor-not-allowed opacity-50" 
               : "hover:bg-[var(--bg-tertiary)]"
           )}
@@ -333,13 +371,13 @@ function InputBar({
 
         {onGitHubImport && (
           <motion.button
-            whileHover={{ scale: disabled ? 1 : 1.05 }}
-            whileTap={{ scale: disabled ? 1 : 0.95 }}
+            whileHover={{ scale: disabled || isStreaming ? 1 : 1.05 }}
+            whileTap={{ scale: disabled || isStreaming ? 1 : 0.95 }}
             onClick={onGitHubImport}
-            disabled={disabled}
+            disabled={disabled || isStreaming}
             className={clsx(
               "flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-all duration-200",
-              disabled
+              disabled || isStreaming
                 ? "cursor-not-allowed opacity-50" 
                 : "hover:bg-[var(--bg-tertiary)]"
             )}
@@ -363,7 +401,7 @@ function InputBar({
         <div className="flex-1"></div>
         
         <div className="text-xs" style={{ color: "var(--text-muted)" }}>
-          ⏎ Send • ⇧⏎ New line
+          {isStreaming ? "⏎ Stop • Streaming..." : "⏎ Send • ⇧⏎ New line"}
         </div>
       </div>
     </motion.div>

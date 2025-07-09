@@ -108,7 +108,9 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
                   value={inputText}
                   onChange={setInputText}
                   onSend={handleSend}
-                  disabled={loading || isStreaming}
+                  disabled={loading}
+                  isStreaming={isStreaming}
+                  onCancel={cancelStream}
                   placeholder="Type your message..."
                   selectedModelId={selectedModelId}
                   onModelChange={setSelectedModelId}
@@ -154,7 +156,9 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
                 value={inputText}
                 onChange={setInputText}
                 onSend={handleSend}
-                disabled={loading || isStreaming}
+                disabled={loading}
+                isStreaming={isStreaming}
+                onCancel={cancelStream}
                 placeholder="Ask a follow-up question..."
                 selectedModelId={selectedModelId}
                 onModelChange={setSelectedModelId}
