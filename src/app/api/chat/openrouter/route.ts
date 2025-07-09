@@ -38,11 +38,9 @@ export async function POST(req: NextRequest) {
       // If there's a GitHub attachment, fetch the content and append it
       if (message.githubAttachment && message.githubAttachment.url) {
         try {
-          console.log('Fetching GitHub content from:', message.githubAttachment.url);
           const response = await fetch(message.githubAttachment.url);
           if (response.ok) {
             const githubContent = await response.text();
-            console.log('GitHub content fetched successfully, length:', githubContent.length);
             messageContent = `${message.content}\n\n[GitHub Repository Content]\n${githubContent}`;
           } else {
             console.error('Failed to fetch GitHub content:', response.status, response.statusText);

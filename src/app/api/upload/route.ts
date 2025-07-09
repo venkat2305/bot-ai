@@ -16,8 +16,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    console.log("Starting image upload process");
-
     // Get R2 configuration
     const { bucketName, publicUrl } = getR2Config();
 
@@ -43,14 +41,10 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    console.log("File validation passed:", { detectedType: fileType.mime });
-
     // Generate unique filename
     const timestamp = Date.now();
     const randomString = Math.random().toString(36).substring(2, 15);
     const fileName = `images/${timestamp}_${randomString}.${fileType.ext}`;
-
-    console.log("Generated filename:", fileName);
 
     // Create R2 client and upload
     const s3Client = getR2Client();
@@ -63,14 +57,10 @@ export async function POST(req: NextRequest) {
       ContentLength: buffer.length,
     });
 
-    console.log("Attempting upload to R2...");
     await s3Client.send(uploadCommand);
-    console.log("Upload successful!");
 
     // Construct public URL using the configured public URL
     const filePublicUrl = `${publicUrl.replace(/\/$/, '')}/${fileName}`;
-    
-    console.log("Generated public URL:", filePublicUrl);
 
     return NextResponse.json({
       url: filePublicUrl,

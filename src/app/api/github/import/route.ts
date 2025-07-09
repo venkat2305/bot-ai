@@ -133,10 +133,6 @@ async function fetchGitHubFiles(
         item.type === "blob" && item.path && shouldIncludeFile(item.path)
     );
 
-    console.log(
-      `Found ${supportedFiles.length} supported files in ${owner}/${repo}`
-    );
-
     // Fetch file contents in parallel (with some throttling)
     const batchSize = 10;
     for (let i = 0; i < supportedFiles.length; i += batchSize) {
@@ -155,9 +151,6 @@ async function fetchGitHubFiles(
 
           // Skip if file is too large
           if (file.size && file.size > MAX_FILE_SIZE) {
-            console.log(
-              `Skipping large file: ${file.path} (${file.size} bytes)`
-            );
             return;
           }
 
@@ -290,10 +283,6 @@ export async function POST(
       auth: GITHUB_PAT,
     });
 
-    console.log(
-      `Fetching repository: ${owner}/${repo}${branch ? ` (${branch})` : ""}`
-    );
-
     // Fetch repository files
     const files = await fetchGitHubFiles(octokit, owner, repo, branch);
 
@@ -328,10 +317,6 @@ export async function POST(
 
     // Calculate total size
     const totalSize = files.reduce((sum, file) => sum + file.size, 0);
-
-    console.log(
-      `Successfully imported ${files.length} files from ${owner}/${repo}`
-    );
 
     return NextResponse.json({
       success: true,

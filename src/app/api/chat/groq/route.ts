@@ -23,8 +23,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    console.log('Groq incoming messages:', JSON.stringify(messages, null, 2));
-
     const groq = createGroq({
       apiKey: GROQ_API_KEY,
     });
@@ -36,13 +34,10 @@ export async function POST(req: NextRequest) {
       // If there's a GitHub attachment, fetch the content and append it
       if (message.githubAttachment && message.githubAttachment.url) {
         try {
-          console.log('Fetching GitHub content from:', message.githubAttachment.url);
           const response = await fetch(message.githubAttachment.url);
           if (response.ok) {
             const githubContent = await response.text();
-            console.log('GitHub content fetched successfully, length:', githubContent.length);
             messageContent = `${message.content}\n\n[GitHub Repository Content]\n${githubContent}`;
-            console.log('Final message content length:', messageContent.length);
           } else {
             console.error('Failed to fetch GitHub content:', response.status, response.statusText);
           }
@@ -51,8 +46,6 @@ export async function POST(req: NextRequest) {
         }
       }
       if (message.images && message.images.length > 0) {
-        console.log(`Groq message with ${message.images.length} images:`, message.images);
-        
         // Create content array with text and images
         const content: Array<{ type: 'text'; text: string } | { type: 'image'; image: string }> = [];
         
@@ -66,7 +59,6 @@ export async function POST(req: NextRequest) {
         
         // Add images - based on AI SDK documentation format
         message.images.forEach((image, index) => {
-          console.log(`Adding image ${index + 1} to Groq:`, image.url);
           content.push({
             type: 'image',
             image: image.url
@@ -78,7 +70,6 @@ export async function POST(req: NextRequest) {
           content: content
         };
         
-        console.log('Groq transformed multimodal message:', JSON.stringify(transformedMessage, null, 2));
         return transformedMessage;
       } else {
         // Regular text message
@@ -88,8 +79,6 @@ export async function POST(req: NextRequest) {
         };
       }
     }));
-
-    console.log('Groq final transformed messages:', JSON.stringify(transformedMessages, null, 2));
 
     const result = streamText({
       model: groq(model),
