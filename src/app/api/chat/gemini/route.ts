@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { messages, model }: ChatRequest = await req.json();
+    const { messages, model, useSearchGrounding }: ChatRequest = await req.json();
 
     if (!messages || !model) {
       return new Response(JSON.stringify({ error: 'Messages and model are required' }), { 
@@ -80,8 +80,13 @@ export async function POST(req: NextRequest) {
       }
     }));
 
+    // Create model with search grounding configuration if enabled
+    const modelInstance = useSearchGrounding 
+      ? google(model, { useSearchGrounding: true })
+      : google(model);
+
     const result = streamText({
-      model: google(model),
+      model: modelInstance,
       messages: transformedMessages as any,
     });
 

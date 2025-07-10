@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Send, Paperclip, ChevronDown, X, Image as ImageIcon, FileText, Square, Github } from "lucide-react";
+import { Send, Paperclip, ChevronDown, X, Image as ImageIcon, FileText, Square, Github, Search } from "lucide-react";
 import clsx from "clsx";
 import { ImageAttachment, GitHubAttachment } from "@/types/chat";
 
@@ -14,7 +14,7 @@ interface SelectOption {
 interface InputBarProps {
   value: string;
   onChange: (text: string) => void;
-  onSend: (question: string, images?: ImageAttachment[], githubAttachment?: GitHubAttachment) => void;
+  onSend: (question: string, images?: ImageAttachment[], githubAttachment?: GitHubAttachment, useSearchGrounding?: boolean) => void;
   disabled?: boolean;
   isStreaming?: boolean;
   onCancel?: () => void;
@@ -23,6 +23,7 @@ interface InputBarProps {
   onModelChange: (modelId: string) => void;
   availableModels: SelectOption[];
   supportsImages?: boolean;
+  supportsSearchGrounding?: boolean;
   onGitHubImport?: () => void;
   githubAttachment?: GitHubAttachment | null;
   onRemoveGitHubAttachment?: () => void;
@@ -40,6 +41,7 @@ function InputBar({
   onModelChange,
   availableModels,
   supportsImages = false,
+  supportsSearchGrounding = false,
   onGitHubImport,
   githubAttachment,
   onRemoveGitHubAttachment
@@ -47,6 +49,7 @@ function InputBar({
   const [isFocused, setIsFocused] = useState<boolean>(false);
   const [attachedImages, setAttachedImages] = useState<ImageAttachment[]>([]);
   const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [useSearchGrounding, setUseSearchGrounding] = useState<boolean>(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -56,7 +59,7 @@ function InputBar({
       return;
     }
     
-    onSend(value, attachedImages.length > 0 ? attachedImages : undefined, githubAttachment || undefined);
+    onSend(value, attachedImages.length > 0 ? attachedImages : undefined, githubAttachment || undefined, useSearchGrounding);
     onChange("");
     setAttachedImages([]);
   };
@@ -386,6 +389,27 @@ function InputBar({
           >
             <Github className="w-3 h-3" />
             GitHub
+          </motion.button>
+        )}
+
+        {supportsSearchGrounding && (
+          <motion.button
+            whileHover={{ scale: disabled || isStreaming ? 1 : 1.05 }}
+            whileTap={{ scale: disabled || isStreaming ? 1 : 0.95 }}
+            onClick={() => setUseSearchGrounding(!useSearchGrounding)}
+            disabled={disabled || isStreaming}
+            className={clsx(
+              "flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-all duration-200",
+              disabled || isStreaming
+                ? "cursor-not-allowed opacity-50" 
+                : "hover:bg-[var(--bg-tertiary)]",
+              useSearchGrounding && "bg-[var(--primary-color)] text-white"
+            )}
+            style={{ color: useSearchGrounding ? "white" : "var(--text-muted)" }}
+            title="Enable search grounding for real-time web information"
+          >
+            <Search className="w-3 h-3" />
+            Search
           </motion.button>
         )}
         

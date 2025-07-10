@@ -20,11 +20,13 @@ export interface ChatMessage {
   content: string;
   images?: ImageAttachment[];
   githubAttachment?: GitHubAttachment;
+  useSearchGrounding?: boolean;
 }
 
 export interface ChatRequest {
   messages: ChatMessage[];
   model: string;
+  useSearchGrounding?: boolean;
 }
 
 export interface Message {
@@ -36,4 +38,5 @@ export interface Message {
   reasoningContent?: string;
   mainContent?: string;
   hasActiveReasoning?: boolean;
+  useSearchGrounding?: boolean;
 } 

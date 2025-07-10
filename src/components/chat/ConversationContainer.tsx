@@ -37,8 +37,8 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
   const [isGitHubModalOpen, setIsGitHubModalOpen] = useState(false);
   const [pendingGitHubAttachment, setPendingGitHubAttachment] = useState<GitHubAttachment | null>(null);
 
-  const handleSend = async (question: string, images?: ImageAttachment[], githubAttachment?: GitHubAttachment) => {
-    await sendMessage(question, images, githubAttachment);
+  const handleSend = async (question: string, images?: ImageAttachment[], githubAttachment?: GitHubAttachment, useSearchGrounding?: boolean) => {
+    await sendMessage(question, images, githubAttachment, useSearchGrounding);
     setPendingGitHubAttachment(null);
   };
 
@@ -116,6 +116,7 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
                   onModelChange={setSelectedModelId}
                   availableModels={getModelOptions()}
                   supportsImages={selectedModel?.capabilities.imageInput || false}
+                  supportsSearchGrounding={selectedModel?.capabilities.searchSupport || false}
                   onGitHubImport={() => setIsGitHubModalOpen(true)}
                   githubAttachment={pendingGitHubAttachment}
                   onRemoveGitHubAttachment={handleRemoveGitHubAttachment}
@@ -164,6 +165,7 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
                 onModelChange={setSelectedModelId}
                 availableModels={getModelOptions()}
                 supportsImages={selectedModel?.capabilities.imageInput || false}
+                supportsSearchGrounding={selectedModel?.capabilities.searchSupport || false}
                 onGitHubImport={() => setIsGitHubModalOpen(true)}
                 githubAttachment={pendingGitHubAttachment}
                 onRemoveGitHubAttachment={handleRemoveGitHubAttachment}

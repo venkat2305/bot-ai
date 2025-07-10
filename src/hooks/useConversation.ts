@@ -63,7 +63,7 @@ export default function useConversation(chatId: string | undefined) {
   }, [chatId]);
 
   const sendMessage = useCallback(
-    async (input: string, images?: ImageAttachment[], githubAttachment?: GitHubAttachment) => {
+    async (input: string, images?: ImageAttachment[], githubAttachment?: GitHubAttachment, useSearchGrounding?: boolean) => {
       const currentChatId = chatId;
 
       if (!input.trim() && (!images || images.length === 0) && !githubAttachment) return;
@@ -82,7 +82,8 @@ export default function useConversation(chatId: string | undefined) {
         role: 'user', 
         content: input,
         ...(images && images.length > 0 && { images }),
-        ...(githubAttachment && { githubAttachment })
+        ...(githubAttachment && { githubAttachment }),
+        ...(useSearchGrounding && { useSearchGrounding })
       };
       setMessages((prevMessages) => [...prevMessages, userMessage]);
       setLoading(true);
@@ -105,11 +106,12 @@ export default function useConversation(chatId: string | undefined) {
         const allMessages = [
           ...messages,
           userMessage
-        ].map(({ role, content, images, githubAttachment }) => ({ 
+        ].map(({ role, content, images, githubAttachment, useSearchGrounding }) => ({ 
           role, 
           content,
           ...(images && images.length > 0 && { images }),
-          ...(githubAttachment && { githubAttachment })
+          ...(githubAttachment && { githubAttachment }),
+          ...(useSearchGrounding && { useSearchGrounding })
         }));
 
         // Create streaming assistant message

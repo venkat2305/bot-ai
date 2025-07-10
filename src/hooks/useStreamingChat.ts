@@ -7,6 +7,7 @@ export interface StreamingMessage {
   content: string;
   images?: ImageAttachment[];
   githubAttachment?: GitHubAttachment;
+  useSearchGrounding?: boolean;
   isStreaming?: boolean;
 }
 
@@ -36,7 +37,7 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
     options.onStreamStart?.();
 
     try {
-      // Transform messages to include images and GitHub attachments if present
+      // Transform messages to include images, GitHub attachments, and search grounding if present
       const transformedMessages = messages.map(message => {
         const baseMessage = { role: message.role, content: message.content };
         const additionalFields: any = {};
@@ -48,9 +49,16 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
         if (message.githubAttachment) {
           additionalFields.githubAttachment = message.githubAttachment;
         }
+
+        if (message.useSearchGrounding) {
+          additionalFields.useSearchGrounding = message.useSearchGrounding;
+        }
         
         return { ...baseMessage, ...additionalFields };
       });
+
+      // Check if any message has search grounding enabled
+      const hasSearchGrounding = messages.some(msg => msg.useSearchGrounding);
 
       const response = await fetch(model.apiEndpoint, {
         method: 'POST',
@@ -60,6 +68,7 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
         body: JSON.stringify({
           model: model.name,
           messages: transformedMessages,
+          ...(hasSearchGrounding && { useSearchGrounding: true }),
         }),
         signal: abortControllerRef.current.signal,
       });
