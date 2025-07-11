@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Send, Paperclip, ChevronDown, X, Image as ImageIcon, FileText, Square, Github, Search } from "lucide-react";
 import clsx from "clsx";
 import { ImageAttachment, GitHubAttachment } from "@/types/chat";
+import { compressImage, uploadImage } from "@/lib/imageUtils";
 
 interface SelectOption {
   value: string;
@@ -97,20 +98,8 @@ function InputBar({
     
     try {
       const uploadPromises = imageFiles.map(async (file) => {
-        const formData = new FormData();
-        formData.append('file', file);
-
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || 'Upload failed');
-        }
-
-        return await response.json();
+        const compressedFile = await compressImage(file);
+        return await uploadImage(compressedFile);
       });
 
       const uploadedImages = await Promise.all(uploadPromises);
@@ -149,20 +138,8 @@ function InputBar({
     
     try {
       const uploadPromises = files.map(async (file) => {
-        const formData = new FormData();
-        formData.append('file', file);
-
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || 'Upload failed');
-        }
-
-        return await response.json();
+        const compressedFile = await compressImage(file);
+        return await uploadImage(compressedFile);
       });
 
       const uploadedImages = await Promise.all(uploadPromises);
