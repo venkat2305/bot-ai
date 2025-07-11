@@ -293,10 +293,9 @@ const ConversationComp: React.FC<ConversationCompProps> = ({
     () =>
       clsx(
         "inline-block max-w-full p-4 rounded-2xl shadow-sm border",
-        "bg-[var(--card-bg)] border-[var(--border-color)]",
         isUser
-          ? "bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200"
-          : ""
+          ? "bg-[var(--bubble-bg)]"
+          : "bg-[var(--card-bg)] border-[var(--border-color)]"
       ),
     [isUser]
   );
