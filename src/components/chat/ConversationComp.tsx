@@ -16,6 +16,52 @@ import remarkGfm from "remark-gfm";
 import clsx from "clsx";
 import { ImageAttachment, GitHubAttachment } from "@/types/chat";
 
+const parseReasoningContent = (
+  content: string,
+  isStreaming: boolean = false
+) => {
+  const thinkRegex = /<think>([\s\S]*?)<\/think>/g;
+  const matches = [];
+  let match;
+
+  while ((match = thinkRegex.exec(content)) !== null) {
+    matches.push(match[1].trim());
+  }
+
+  // Handle incomplete reasoning during streaming
+  if (
+    isStreaming &&
+    content.includes("<think>") &&
+    !content.includes("</think>")
+  ) {
+    const incompleteMatch = content.match(/<think>([\s\S]*)$/);
+    if (incompleteMatch) {
+      matches.push(incompleteMatch[1].trim());
+    }
+  }
+
+  let reasoningContent = matches.join("\n\n");
+
+  // Clean up any residual tags from the reasoning content itself.
+  reasoningContent = reasoningContent.replace(/<\/?think>/g, "").trim();
+
+  // A more aggressive cleanup for mainContent.
+  // This removes complete <think> blocks AND any stray <think> or </think> tags.
+  const mainContent = content
+    .replace(/<think>[\s\S]*?<\/think>/g, "") // Remove complete blocks
+    .replace(/<\/?think>/g, "") // Remove any stray/remaining tags
+    .trim();
+
+  return {
+    reasoningContent: reasoningContent || null,
+    // Fallback to the original content only if mainContent is empty,
+    // but this is less likely to be needed now.
+    mainContent:
+      mainContent ||
+      (isStreaming ? null : content.replace(/<\/?think>/g, "").trim()),
+  };
+};
+
 interface ConversationCompProps {
   role: "user" | "assistant";
   content: string;
@@ -122,46 +168,53 @@ const ReasoningSection: React.FC<{
   isStreaming,
   hasActiveReasoning,
   isUser,
-}) => (
-  <div className="mb-4">
-    <button
-      onClick={onToggle}
-      className="flex items-center gap-2 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--primary-color)] transition-colors"
-      aria-expanded={showReasoning}
-      aria-controls="reasoning-content"
-    >
-      <Brain className="w-4 h-4" />
-      <span>Reasoning Process</span>
-      {showReasoning ? (
-        <ChevronUp className="w-4 h-4" />
-      ) : (
-        <ChevronDown className="w-4 h-4" />
-      )}
-    </button>
+}) => {
+  // Clean the reasoning content of any remaining tags
+  const cleanReasoningContent = reasoningContent
+    .replace(/<\/?think>/g, "")
+    .trim();
 
-    <AnimatePresence>
-      {showReasoning && (
-        <motion.div
-          {...reasoningVariants}
-          transition={{ duration: ANIMATION_DURATION }}
-          className="mt-3 p-3 rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border-color)]"
-          id="reasoning-content"
-        >
-          <div className="prose prose-sm max-w-none prose-headings:text-[var(--text-secondary)] prose-p:text-[var(--text-secondary)] prose-strong:text-[var(--text-secondary)] prose-code:text-[var(--primary-color)] prose-pre:bg-[var(--card-bg)] prose-pre:border prose-pre:border-[var(--border-color)]">
-            <div className="relative">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {reasoningContent}
-              </ReactMarkdown>
-              {isStreaming && hasActiveReasoning && !isUser && (
-                <StreamingCursor />
-              )}
+  return (
+    <div className="mb-4">
+      <button
+        onClick={onToggle}
+        className="flex items-center gap-2 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--primary-color)] transition-colors"
+        aria-expanded={showReasoning}
+        aria-controls="reasoning-content"
+      >
+        <Brain className="w-4 h-4" />
+        <span>Reasoning Process</span>
+        {showReasoning ? (
+          <ChevronUp className="w-4 h-4" />
+        ) : (
+          <ChevronDown className="w-4 h-4" />
+        )}
+      </button>
+
+      <AnimatePresence>
+        {showReasoning && (
+          <motion.div
+            {...reasoningVariants}
+            transition={{ duration: ANIMATION_DURATION }}
+            className="mt-3 p-3 rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border-color)]"
+            id="reasoning-content"
+          >
+            <div className="prose prose-sm max-w-none prose-headings:text-[var(--text-secondary)] prose-p:text-[var(--text-secondary)] prose-strong:text-[var(--text-secondary)] prose-code:text-[var(--primary-color)] prose-pre:bg-[var(--card-bg)] prose-pre:border prose-pre:border-[var(--border-color)]">
+              <div className="relative">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {cleanReasoningContent}
+                </ReactMarkdown>
+                {isStreaming && hasActiveReasoning && !isUser && (
+                  <StreamingCursor />
+                )}
+              </div>
             </div>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  </div>
-);
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
 
 const MainContent: React.FC<{
   content: string;
@@ -192,35 +245,41 @@ const ImageGallery: React.FC<{ images: ImageAttachment[] }> = ({ images }) => (
           src={image.url}
           alt={image.filename}
           className="max-w-[200px] max-h-[200px] object-cover rounded-lg border border-[var(--border-color)] shadow-sm"
-          onClick={() => window.open(image.url, '_blank')}
-          style={{ cursor: 'pointer' }}
+          onClick={() => window.open(image.url, "_blank")}
+          style={{ cursor: "pointer" }}
         />
         <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white text-xs p-1 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity">
           <div className="truncate">{image.filename}</div>
-          <div className="text-gray-300">{(image.size / 1024).toFixed(1)}KB</div>
+          <div className="text-gray-300">
+            {(image.size / 1024).toFixed(1)}KB
+          </div>
         </div>
       </div>
     ))}
   </div>
 );
 
-const GitHubAttachmentDisplay: React.FC<{ githubAttachment: GitHubAttachment }> = ({ githubAttachment }) => (
+const GitHubAttachmentDisplay: React.FC<{
+  githubAttachment: GitHubAttachment;
+}> = ({ githubAttachment }) => (
   <div className="mb-3 p-3 bg-[var(--bg-tertiary)] rounded-lg border border-[var(--border-color)]">
     <div className="flex items-center gap-2 mb-2">
       <Github className="w-4 h-4 text-[var(--primary-color)]" />
-      <span className="text-sm font-medium text-[var(--text-color)]">GitHub Repository</span>
+      <span className="text-sm font-medium text-[var(--text-color)]">
+        GitHub Repository
+      </span>
     </div>
     <div className="space-y-1 text-xs text-[var(--text-muted)]">
       {githubAttachment.repoUrl && (
         <div className="flex items-center gap-2">
           <span className="font-medium">Repository:</span>
-          <a 
-            href={githubAttachment.repoUrl} 
-            target="_blank" 
+          <a
+            href={githubAttachment.repoUrl}
+            target="_blank"
             rel="noopener noreferrer"
             className="text-[var(--primary-color)] hover:underline"
           >
-            {githubAttachment.repoUrl.replace('https://github.com/', '')}
+            {githubAttachment.repoUrl.replace("https://github.com/", "")}
           </a>
         </div>
       )}
@@ -245,9 +304,9 @@ const GitHubAttachmentDisplay: React.FC<{ githubAttachment: GitHubAttachment }> 
     </div>
     {githubAttachment.url && (
       <div className="mt-2 pt-2 border-t border-[var(--border-color)]">
-        <a 
-          href={githubAttachment.url} 
-          target="_blank" 
+        <a
+          href={githubAttachment.url}
+          target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-1 text-xs text-[var(--primary-color)] hover:underline"
         >
@@ -274,8 +333,19 @@ const ConversationComp: React.FC<ConversationCompProps> = ({
   const [showReasoning, setShowReasoning] = useState<boolean>(false);
 
   const isUser = role === "user";
-  const mainContent = propMainContent ?? content;
-  const reasoningContent = propReasoningContent;
+
+  // Parse reasoning content if not provided as props
+  const parsedContent = useMemo(() => {
+    if (propReasoningContent !== undefined || propMainContent !== undefined) {
+      return {
+        reasoningContent: propReasoningContent,
+        mainContent: propMainContent ?? content,
+      };
+    }
+    return parseReasoningContent(content, isStreaming);
+  }, [content, propReasoningContent, propMainContent, isStreaming]);
+
+  const { reasoningContent, mainContent } = parsedContent;
 
   // Memoize expensive computations
   const containerClasses = useMemo(
@@ -324,16 +394,14 @@ const ConversationComp: React.FC<ConversationCompProps> = ({
       <div className={messageClasses}>
         <div className={bubbleClasses}>
           {/* Display images if present */}
-          {images && images.length > 0 && (
-            <ImageGallery images={images} />
-          )}
+          {images && images.length > 0 && <ImageGallery images={images} />}
 
           {/* Display GitHub attachment if present */}
-          {githubAttachment && (
+          {githubAttachment && githubAttachment.url && (
             <GitHubAttachmentDisplay githubAttachment={githubAttachment} />
           )}
 
-          {reasoningContent && (
+          {reasoningContent && reasoningContent.length > 0 && (
             <ReasoningSection
               reasoningContent={reasoningContent}
               showReasoning={showReasoning}
