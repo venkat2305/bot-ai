@@ -247,7 +247,7 @@ export const MODEL_CONFIGS: ModelConfig[] = [
       audioOutput: false,
       transcription: false,
       pdfSupport: false,
-      searchSupport: true,
+      searchSupport: false,
       isReasoningModel: true,
     },
     isActive: true,
