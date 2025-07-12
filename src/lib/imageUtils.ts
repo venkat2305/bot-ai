@@ -1,5 +1,6 @@
 
 import imageCompression from 'browser-image-compression';
+import { ImageAttachment } from '@/types/chat';
 
 interface UploadResponse {
   url: string;
@@ -29,9 +30,9 @@ export const compressImage = async (imageFile: File): Promise<File> => {
   }
 };
 
-export const uploadImage = async (file: File): Promise<UploadResponse> => {
+export const uploadImage = async (compressedFile: File, originalFile: File): Promise<ImageAttachment> => {
   const formData = new FormData();
-  formData.append('file', file);
+  formData.append('file', compressedFile);
 
   const response = await fetch('/api/upload', {
     method: 'POST',
@@ -43,5 +44,12 @@ export const uploadImage = async (file: File): Promise<UploadResponse> => {
     throw new Error(error.error || 'Upload failed');
   }
 
-  return await response.json();
+  const uploadResponse: UploadResponse = await response.json();
+  
+  return {
+    url: uploadResponse.url,
+    filename: uploadResponse.filename,
+    mimeType: originalFile.type,
+    size: originalFile.size
+  };
 }; 

@@ -99,7 +99,7 @@ function InputBar({
     try {
       const uploadPromises = imageFiles.map(async (file) => {
         const compressedFile = await compressImage(file);
-        return await uploadImage(compressedFile);
+        return await uploadImage(compressedFile, file);
       });
 
       const uploadedImages = await Promise.all(uploadPromises);
@@ -139,7 +139,7 @@ function InputBar({
     try {
       const uploadPromises = files.map(async (file) => {
         const compressedFile = await compressImage(file);
-        return await uploadImage(compressedFile);
+        return await uploadImage(compressedFile, file);
       });
 
       const uploadedImages = await Promise.all(uploadPromises);
