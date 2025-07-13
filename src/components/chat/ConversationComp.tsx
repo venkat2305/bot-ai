@@ -72,6 +72,7 @@ interface ConversationCompProps {
   reasoningContent?: string;
   mainContent?: string;
   hasActiveReasoning?: boolean;
+  themeMode?: "light" | "dark";
 }
 
 // Extract constants
@@ -161,6 +162,7 @@ const ReasoningSection: React.FC<{
   isStreaming: boolean;
   hasActiveReasoning: boolean;
   isUser: boolean;
+  themeMode?: "light" | "dark";
 }> = ({
   reasoningContent,
   showReasoning,
@@ -168,6 +170,7 @@ const ReasoningSection: React.FC<{
   isStreaming,
   hasActiveReasoning,
   isUser,
+  themeMode,
 }) => {
   // Clean the reasoning content of any remaining tags
   const cleanReasoningContent = reasoningContent
@@ -199,9 +202,9 @@ const ReasoningSection: React.FC<{
             className="mt-3 p-3 rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border-color)]"
             id="reasoning-content"
           >
-            <div className="prose prose-sm max-w-none prose-headings:text-[var(--text-secondary)] prose-p:text-[var(--text-secondary)] prose-strong:text-[var(--text-secondary)] prose-code:text-[var(--primary-color)] prose-pre:bg-[var(--card-bg)] prose-pre:border prose-pre:border-[var(--border-color)]">
+            <div className={clsx("prose prose-sm max-w-none", themeMode === "dark" && "dark:prose-invert")}>
               <div className="relative">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                <ReactMarkdown>
                   {cleanReasoningContent}
                 </ReactMarkdown>
                 {isStreaming && hasActiveReasoning && !isUser && (
@@ -223,10 +226,11 @@ const MainContent: React.FC<{
   isUser: boolean;
   onCopy: (text: string) => void;
   copied: boolean;
-}> = ({ content, isStreaming, hasActiveReasoning, isUser, onCopy, copied }) => (
-  <div className="prose prose-sm max-w-none prose-headings:text-[var(--text-color)] prose-p:text-[var(--text-color)] prose-strong:text-[var(--text-color)] prose-code:text-[var(--primary-color)] prose-pre:bg-[var(--bg-tertiary)] prose-pre:border prose-pre:border-[var(--border-color)] prose-blockquote:border-[var(--primary-color)] prose-blockquote:text-[var(--text-secondary)]">
+  themeMode?: "light" | "dark";
+}> = ({ content, isStreaming, hasActiveReasoning, isUser, onCopy, copied, themeMode }) => (
+  <div className={clsx("prose prose-sm", themeMode === "dark" && "dark:prose-invert")}>
     <div className="relative">
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+      <ReactMarkdown>{content}</ReactMarkdown>
       {isStreaming && !hasActiveReasoning && !isUser && <StreamingCursor />}
     </div>
     <CopyButton
@@ -328,6 +332,7 @@ const ConversationComp: React.FC<ConversationCompProps> = ({
   reasoningContent: propReasoningContent,
   mainContent: propMainContent,
   hasActiveReasoning = false,
+  themeMode,
 }) => {
   const [copied, setCopied] = useState<boolean>(false);
   const [showReasoning, setShowReasoning] = useState<boolean>(false);
@@ -355,7 +360,7 @@ const ConversationComp: React.FC<ConversationCompProps> = ({
 
   const messageClasses = useMemo(
     () =>
-      clsx("flex-1 max-w-[85%] space-y-2", isUser ? "text-right" : "text-left"),
+      clsx("max-w-[85%] space-y-2", isUser ? "ml-auto" : "flex-1"),
     [isUser]
   );
 
@@ -409,6 +414,7 @@ const ConversationComp: React.FC<ConversationCompProps> = ({
               isStreaming={isStreaming}
               hasActiveReasoning={hasActiveReasoning}
               isUser={isUser}
+              themeMode={themeMode}
             />
           )}
 
@@ -420,6 +426,7 @@ const ConversationComp: React.FC<ConversationCompProps> = ({
               isUser={isUser}
               onCopy={handleCopy}
               copied={copied}
+              themeMode={themeMode}
             />
           )}
         </div>

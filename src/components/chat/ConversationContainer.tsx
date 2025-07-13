@@ -10,6 +10,7 @@ import GitHubImportModal from "../ui/GitHubImportModal";
 
 interface ConversationContainerProps {
   chatId?: string;
+  themeMode?: "light" | "dark";
 }
 
 interface SelectOption {
@@ -19,7 +20,7 @@ interface SelectOption {
   capabilities?: string[];
 }
 
-function ConversationContainer({ chatId }: ConversationContainerProps) {
+function ConversationContainer({ chatId, themeMode }: ConversationContainerProps) {
   const {
     messages,
     loading,
@@ -143,6 +144,7 @@ function ConversationContainer({ chatId }: ConversationContainerProps) {
                   reasoningContent={message.reasoningContent}
                   mainContent={message.mainContent}
                   hasActiveReasoning={message.hasActiveReasoning}
+                  themeMode={themeMode}
                 />
               ))}
             </motion.div>

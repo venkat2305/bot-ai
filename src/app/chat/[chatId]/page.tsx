@@ -116,7 +116,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
             transition={{ duration: 0.3 }}
             className="h-full"
           >
-            <ConversationContainer chatId={currentChatId} />
+            <ConversationContainer chatId={currentChatId} themeMode={themeMode} />
           </motion.div>
         </AnimatePresence>
       </div>
