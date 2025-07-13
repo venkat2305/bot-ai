@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     const fileName = `images/${timestamp}_${randomString}.${fileType.ext}`;
 
     // Create R2 client and upload
-    const s3Client = getR2Client();
+    const r2Client = getR2Client();
 
     const uploadCommand = new PutObjectCommand({
       Bucket: bucketName,
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
       ContentLength: buffer.length,
     });
 
-    await s3Client.send(uploadCommand);
+    await r2Client.send(uploadCommand);
 
     // Construct public URL using the configured public URL
     const filePublicUrl = `${publicUrl.replace(/\/$/, '')}/${fileName}`;
