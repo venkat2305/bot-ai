@@ -28,6 +28,7 @@ interface InputBarProps {
   onGitHubImport?: () => void;
   githubAttachment?: GitHubAttachment | null;
   onRemoveGitHubAttachment?: () => void;
+  isMobile?: boolean;
 }
 
 function InputBar({ 
@@ -45,7 +46,8 @@ function InputBar({
   supportsSearchGrounding = false,
   onGitHubImport,
   githubAttachment,
-  onRemoveGitHubAttachment
+  onRemoveGitHubAttachment,
+  isMobile = false
 }: InputBarProps) {
   const [isFocused, setIsFocused] = useState<boolean>(false);
   const [attachedImages, setAttachedImages] = useState<ImageAttachment[]>([]);
@@ -303,11 +305,12 @@ function InputBar({
           <select
             className={clsx(
               "appearance-none bg-[var(--bg-tertiary)] border border-[var(--border-color)]",
-              "rounded-md px-2 py-1 pr-6 text-xs font-medium min-w-[160px]",
+              "rounded-md px-2 py-1 pr-6 text-xs font-medium",
               "text-[var(--text-color)] cursor-pointer",
               "focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)] focus:border-transparent",
               "transition-all duration-200",
-              (disabled || isStreaming) && "cursor-not-allowed opacity-50"
+              (disabled || isStreaming) && "cursor-not-allowed opacity-50",
+              isMobile ? "min-w-[120px]" : "min-w-[160px]"
             )}
             value={selectedModelId}
             onChange={handleModelChange}
@@ -315,7 +318,7 @@ function InputBar({
           >
             {availableModels.map((model) => (
               <option key={model.value} value={model.value}>
-                {model.label}
+                {isMobile ? model.label.split(' (')[0] : model.label}
               </option>
             ))}
           </select>
@@ -323,72 +326,75 @@ function InputBar({
             style={{ color: "var(--text-secondary)" }} />
         </div>
 
-        <motion.button
-          whileHover={{ scale: disabled || !supportsImages || isStreaming ? 1 : 1.05 }}
-          whileTap={{ scale: disabled || !supportsImages || isStreaming ? 1 : 0.95 }}
-          onClick={handleAttachClick}
-          disabled={disabled || !supportsImages || isUploading || isStreaming}
-          className={clsx(
-            "flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-all duration-200",
-            disabled || !supportsImages || isStreaming
-              ? "cursor-not-allowed opacity-50" 
-              : "hover:bg-[var(--bg-tertiary)]"
-          )}
-          style={{ color: supportsImages ? "var(--text-muted)" : "var(--text-muted)" }}
-        >
-          {supportsImages ? (
-            <>
-              <ImageIcon className="w-3 h-3" />
-              {isUploading ? 'Uploading...' : 'Image'}
-            </>
-          ) : (
-            <>
-              <Paperclip className="w-3 h-3" />
-              Attach
-            </>
-          )}
-        </motion.button>
-
-        {onGitHubImport && (
+        {/* Action Buttons - Responsive Layout */}
+        <div className={`flex items-center gap-2 ${isMobile ? 'flex-wrap' : ''}`}>
           <motion.button
-            whileHover={{ scale: disabled || isStreaming ? 1 : 1.05 }}
-            whileTap={{ scale: disabled || isStreaming ? 1 : 0.95 }}
-            onClick={onGitHubImport}
-            disabled={disabled || isStreaming}
+            whileHover={{ scale: disabled || !supportsImages || isStreaming ? 1 : 1.05 }}
+            whileTap={{ scale: disabled || !supportsImages || isStreaming ? 1 : 0.95 }}
+            onClick={handleAttachClick}
+            disabled={disabled || !supportsImages || isUploading || isStreaming}
             className={clsx(
               "flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-all duration-200",
-              disabled || isStreaming
+              disabled || !supportsImages || isStreaming
                 ? "cursor-not-allowed opacity-50" 
                 : "hover:bg-[var(--bg-tertiary)]"
             )}
-            style={{ color: "var(--text-muted)" }}
-            title="Import GitHub Repository"
+            style={{ color: supportsImages ? "var(--text-muted)" : "var(--text-muted)" }}
           >
-            <Github className="w-3 h-3" />
-            GitHub
-          </motion.button>
-        )}
-
-        {supportsSearchGrounding && (
-          <motion.button
-            whileHover={{ scale: disabled || isStreaming ? 1 : 1.05 }}
-            whileTap={{ scale: disabled || isStreaming ? 1 : 0.95 }}
-            onClick={() => setUseSearchGrounding(!useSearchGrounding)}
-            disabled={disabled || isStreaming}
-            className={clsx(
-              "flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-all duration-200",
-              disabled || isStreaming
-                ? "cursor-not-allowed opacity-50" 
-                : "hover:bg-[var(--bg-tertiary)]",
-              useSearchGrounding && "bg-[var(--primary-color)] text-white"
+            {supportsImages ? (
+              <>
+                <ImageIcon className="w-3 h-3" />
+                {!isMobile && (isUploading ? 'Uploading...' : 'Image')}
+              </>
+            ) : (
+              <>
+                <Paperclip className="w-3 h-3" />
+                {!isMobile && 'Attach'}
+              </>
             )}
-            style={{ color: useSearchGrounding ? "white" : "var(--text-muted)" }}
-            title="Enable search grounding for real-time web information"
-          >
-            <Search className="w-3 h-3" />
-            Search
           </motion.button>
-        )}
+
+          {onGitHubImport && (
+            <motion.button
+              whileHover={{ scale: disabled || isStreaming ? 1 : 1.05 }}
+              whileTap={{ scale: disabled || isStreaming ? 1 : 0.95 }}
+              onClick={onGitHubImport}
+              disabled={disabled || isStreaming}
+              className={clsx(
+                "flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-all duration-200",
+                disabled || isStreaming
+                  ? "cursor-not-allowed opacity-50" 
+                  : "hover:bg-[var(--bg-tertiary)]"
+              )}
+              style={{ color: "var(--text-muted)" }}
+              title="Import GitHub Repository"
+            >
+              <Github className="w-3 h-3" />
+              {!isMobile && 'GitHub'}
+            </motion.button>
+          )}
+
+          {supportsSearchGrounding && (
+            <motion.button
+              whileHover={{ scale: disabled || isStreaming ? 1 : 1.05 }}
+              whileTap={{ scale: disabled || isStreaming ? 1 : 0.95 }}
+              onClick={() => setUseSearchGrounding(!useSearchGrounding)}
+              disabled={disabled || isStreaming}
+              className={clsx(
+                "flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-all duration-200",
+                disabled || isStreaming
+                  ? "cursor-not-allowed opacity-50" 
+                  : "hover:bg-[var(--bg-tertiary)]",
+                useSearchGrounding && "bg-[var(--primary-color)] text-white"
+              )}
+              style={{ color: useSearchGrounding ? "white" : "var(--text-muted)" }}
+              title="Enable search grounding for real-time web information"
+            >
+              <Search className="w-3 h-3" />
+              {!isMobile && 'Search'}
+            </motion.button>
+          )}
+        </div>
         
         <input
           ref={fileInputRef}
@@ -401,9 +407,11 @@ function InputBar({
         
         <div className="flex-1"></div>
         
-        <div className="text-xs" style={{ color: "var(--text-muted)" }}>
-          {isStreaming ? "⏎ Stop • Streaming..." : "⏎ Send • ⇧⏎ New line"}
-        </div>
+        {!isMobile && (
+          <div className="text-xs" style={{ color: "var(--text-muted)" }}>
+            {isStreaming ? "⏎ Stop • Streaming..." : "⏎ Send • ⇧⏎ New line"}
+          </div>
+        )}
       </div>
     </motion.div>
   );
