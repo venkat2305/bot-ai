@@ -204,7 +204,30 @@ export const MODEL_CONFIGS: ModelConfig[] = [
     apiEndpoint: '/api/chat/openrouter',
     ownedBy: 'Agentica',
   },
-  
+  {
+    id: 'cognitivecomputations/dolphin-mistral-24b-venice-edition:free',
+    name: 'cognitivecomputations/dolphin-mistral-24b-venice-edition:free',
+    displayName: 'Venice: Uncensored',
+    serviceProvider: 'openrouter',
+    description: 'An uncensored model by Cognitive Computations, optimized for open-ended conversations and creative text generation.',
+    contextWindow: 32768,
+    maxCompletionTokens: 8192,
+    capabilities: {
+      textInput: true,
+      textOutput: true,
+      imageInput: false,
+      imageOutput: false,
+      audioInput: false,
+      audioOutput: false,
+      transcription: false,
+      pdfSupport: false,
+      searchSupport: false,
+      isReasoningModel: false,
+    },
+    isActive: true,
+    apiEndpoint: '/api/chat/openrouter',
+    ownedBy: 'Cognitive Computations',
+  },
   // Perplexity Models
   {
     id: 'r1-1776',
