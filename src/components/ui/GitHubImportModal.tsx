@@ -62,7 +62,7 @@ export default function GitHubImportModal({
       setFileStructure(data.structure);
       setDefaultBranch(data.defaultBranch);
       
-      // Auto-select supported files
+      // Auto-select only supported files (excludes config files, lock files, etc.)
       const supportedFiles = new Set<string>();
       const collectSupportedFiles = (items: FileTreeItem[]) => {
         items.forEach(item => {

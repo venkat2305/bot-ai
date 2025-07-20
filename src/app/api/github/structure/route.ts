@@ -55,6 +55,61 @@ const SUPPORTED_EXTENSIONS = [
   ".ps1",
 ];
 
+// Files and patterns to exclude by default (not auto-selected)
+const EXCLUDED_FILES = [
+  "tsconfig.json",
+  "tsconfig.tsbuildinfo",
+  "package-lock.json",
+  "yarn.lock",
+  "pnpm-lock.yaml",
+  "next.config.js",
+  "next.config.ts",
+  "next.config.mjs",
+  "tailwind.config.js",
+  "tailwind.config.ts",
+  "postcss.config.js",
+  "webpack.config.js",
+  "vite.config.js",
+  "vite.config.ts",
+  "rollup.config.js",
+  "babel.config.js",
+  ".eslintrc.js",
+  ".eslintrc.json",
+  ".prettierrc",
+  ".gitignore",
+  ".dockerignore",
+  "dockerfile",
+  "docker-compose.yml",
+  "docker-compose.yaml",
+];
+
+// Folder patterns to exclude
+const EXCLUDED_FOLDERS = [
+  ".github",
+  ".git",
+  "node_modules",
+  ".next",
+  "dist",
+  "build",
+  ".vscode",
+  ".idea",
+  "coverage",
+  ".nyc_output",
+];
+
+// Large/binary file patterns to exclude
+const EXCLUDED_PATTERNS = [
+  /\.min\.(js|css)$/,
+  /\.map$/,
+  /\.lock$/,
+  /\.log$/,
+  /\.(png|jpg|jpeg|gif|svg|ico|webp)$/,
+  /\.(pdf|doc|docx|xls|xlsx|ppt|pptx)$/,
+  /\.(zip|tar|gz|rar|7z)$/,
+  /\.(mp4|mp3|wav|avi|mov)$/,
+  /\.d\.ts$/,
+];
+
 function parseGitHubUrl(url: string): { owner: string; repo: string } {
   try {
     const parsed = new URL(url);
@@ -74,6 +129,30 @@ function parseGitHubUrl(url: string): { owner: string; repo: string } {
 function isFileSupported(path: string): boolean {
   const ext = path.substring(path.lastIndexOf("."));
   return SUPPORTED_EXTENSIONS.includes(ext);
+}
+
+function shouldExcludeFile(path: string): boolean {
+  const fileName = path.split('/').pop()?.toLowerCase() || '';
+  const folderPath = path.split('/').slice(0, -1).join('/');
+  
+  // Check if file is in excluded files list
+  if (EXCLUDED_FILES.some(excludedFile => fileName === excludedFile.toLowerCase())) {
+    return true;
+  }
+  
+  // Check if file is in excluded folder
+  if (EXCLUDED_FOLDERS.some(excludedFolder => 
+    folderPath.split('/').some(folder => folder.toLowerCase() === excludedFolder.toLowerCase())
+  )) {
+    return true;
+  }
+  
+  // Check if file matches excluded patterns
+  if (EXCLUDED_PATTERNS.some(pattern => pattern.test(fileName))) {
+    return true;
+  }
+  
+  return false;
 }
 
 function buildFileTree(items: any[]): FileTreeItem[] {
@@ -104,7 +183,7 @@ function buildFileTree(items: any[]): FileTreeItem[] {
   items.forEach(item => {
     if (item.type === "blob") {
       const filePath = item.path;
-      const isSupported = isFileSupported(filePath);
+      const isSupported = isFileSupported(filePath) && !shouldExcludeFile(filePath);
       
       tree[filePath] = {
         path: filePath,
