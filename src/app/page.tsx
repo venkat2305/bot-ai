@@ -13,13 +13,14 @@ export default function Home() {
     if (status === 'loading') {
       return; // Do nothing while loading
     }
-    if (status === 'unauthenticated') {
-      router.push('/api/auth/signin'); // Redirect to signin if not authenticated
-      return;
-    }
-    if (status === 'authenticated') {
+    // Temporarily bypass auth for development
+    // if (status === 'unauthenticated') {
+    //   router.push('/api/auth/signin'); // Redirect to signin if not authenticated
+    //   return;
+    // }
+    // if (status === 'authenticated') {
       router.replace(`/chat/${uuidv4()}`);
-    }
+    // }
   }, [status, router]);
 
   return (

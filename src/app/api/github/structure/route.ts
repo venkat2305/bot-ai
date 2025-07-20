@@ -87,7 +87,7 @@ function buildFileTree(items: any[]): FileTreeItem[] {
       const parts = item.path.split("/");
       let currentPath = "";
       
-      parts.forEach((part, index) => {
+      parts.forEach((part: string, index: number) => {
         currentPath = index === 0 ? part : `${currentPath}/${part}`;
         if (!tree[currentPath]) {
           tree[currentPath] = {
