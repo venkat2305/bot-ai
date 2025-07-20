@@ -12,6 +12,7 @@ import {
   LogIn,
   LogOut,
   User,
+  X,
 } from "lucide-react";
 import clsx from "clsx";
 import { useSession, signIn, signOut } from "next-auth/react";
@@ -32,6 +33,8 @@ interface SideBarProps {
   currentChatId?: string;
   onOpenDeleteConfirm: (chatId: string) => void;
   refreshChatsTrigger?: number;
+  isMobile?: boolean;
+  onCloseMobile?: () => void;
 }
 
 function UserAuth({ collapsed }: { collapsed: boolean }) {
@@ -127,6 +130,8 @@ function SideBar({
   currentChatId,
   onOpenDeleteConfirm,
   refreshChatsTrigger,
+  isMobile = false,
+  onCloseMobile,
 }: SideBarProps) {
   const [recentChats, setRecentChats] = useState<Chat[]>([]);
   const { data: session, status } = useSession();
@@ -196,16 +201,29 @@ function SideBar({
             </h1>
           </motion.div>
         )}
-        <button
-          onClick={onToggleCollapse}
-          className={clsx(
-            "rounded-lg transition-all duration-200 hover:bg-[var(--bg-tertiary)]",
-            collapsed ? "p-3" : "p-3"
+        
+        <div className="flex items-center gap-2">
+          {isMobile && onCloseMobile && (
+            <button
+              onClick={onCloseMobile}
+              className="rounded-lg p-2 transition-all duration-200 hover:bg-[var(--bg-tertiary)]"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              <X className="w-5 h-5" />
+            </button>
           )}
-          style={{ color: "var(--text-secondary)" }}
-        >
-          <Menu className={clsx(collapsed ? "w-5 h-5" : "w-5 h-5")} />
-        </button>
+          
+          <button
+            onClick={onToggleCollapse}
+            className={clsx(
+              "rounded-lg transition-all duration-200 hover:bg-[var(--bg-tertiary)]",
+              collapsed ? "p-3" : "p-3"
+            )}
+            style={{ color: "var(--text-secondary)" }}
+          >
+            <Menu className={clsx(collapsed ? "w-5 h-5" : "w-5 h-5")} />
+          </button>
+        </div>
       </div>
 
       {/* New Chat Button */}

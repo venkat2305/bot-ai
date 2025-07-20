@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, Zap, X } from "lucide-react";
+import { Loader2, Zap, X, Menu } from "lucide-react";
 import InputBar from "./InputBar";
 import ConversationComp from "./ConversationComp";
 import useConversation from "../../hooks/useConversation";
@@ -11,6 +11,8 @@ import GitHubImportModal from "../ui/GitHubImportModal";
 interface ConversationContainerProps {
   chatId?: string;
   themeMode?: "light" | "dark";
+  isMobile?: boolean;
+  onToggleSidebar?: () => void;
 }
 
 interface SelectOption {
@@ -20,7 +22,7 @@ interface SelectOption {
   capabilities?: string[];
 }
 
-function ConversationContainer({ chatId, themeMode }: ConversationContainerProps) {
+function ConversationContainer({ chatId, themeMode, isMobile = false, onToggleSidebar }: ConversationContainerProps) {
   const {
     messages,
     loading,
@@ -94,6 +96,23 @@ function ConversationContainer({ chatId, themeMode }: ConversationContainerProps
 
   return (
     <div className="flex flex-col h-screen bg-[var(--bg-body)]">
+      {/* Mobile Header */}
+      {isMobile && (
+        <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: "var(--border-color)" }}>
+          <button
+            onClick={onToggleSidebar}
+            className="p-2 rounded-lg transition-all duration-200 hover:bg-[var(--bg-tertiary)]"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+          <h1 className="text-lg font-bold" style={{ color: "var(--primary-color)" }}>
+            Bot AI
+          </h1>
+          <div className="w-10" /> {/* Spacer for centered title */}
+        </div>
+      )}
+
       <div className="flex-1 flex flex-col overflow-hidden">
         <AnimatePresence mode="wait">
           {messages.length === 0 ? (
@@ -121,6 +140,7 @@ function ConversationContainer({ chatId, themeMode }: ConversationContainerProps
                   onGitHubImport={() => setIsGitHubModalOpen(true)}
                   githubAttachment={pendingGitHubAttachment}
                   onRemoveGitHubAttachment={handleRemoveGitHubAttachment}
+                  isMobile={isMobile}
                 />
               </div>
             </motion.div>
@@ -130,7 +150,7 @@ function ConversationContainer({ chatId, themeMode }: ConversationContainerProps
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex-1 overflow-y-auto p-6 space-y-6"
+              className={`flex-1 overflow-y-auto space-y-6 ${isMobile ? 'p-4 pb-20' : 'p-6'}`}
             >
               {messages.map((message, index) => (
                 <ConversationComp
@@ -151,9 +171,15 @@ function ConversationContainer({ chatId, themeMode }: ConversationContainerProps
           )}
         </AnimatePresence>
 
-
+        {/* Fixed Input Bar for Mobile */}
         {messages.length > 0 && (
-          <div className="p-4 flex justify-center w-full" style={{ borderColor: "var(--border-color)" }}>
+          <div 
+            className={`
+              ${isMobile ? 'fixed bottom-0 left-0 right-0 bg-[var(--bg-body)] border-t z-30' : 'border-t'} 
+              p-4 flex justify-center w-full
+            `} 
+            style={{ borderColor: "var(--border-color)" }}
+          >
             <div className="w-full max-w-3xl">
               <InputBar
                 value={inputText}
@@ -171,6 +197,7 @@ function ConversationContainer({ chatId, themeMode }: ConversationContainerProps
                 onGitHubImport={() => setIsGitHubModalOpen(true)}
                 githubAttachment={pendingGitHubAttachment}
                 onRemoveGitHubAttachment={handleRemoveGitHubAttachment}
+                isMobile={isMobile}
               />
             </div>
           </div>

@@ -17,10 +17,29 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
   const [currentChatId, setCurrentChatId] = useState<string | undefined>(resolvedParams.chatId);
   const [conversationKey, setConversationKey] = useState<number>(Date.now());
-  const [chatRefreshKey, setChatRefreshKey] = useState<number>(0); // New state variable
+  const [chatRefreshKey, setChatRefreshKey] = useState<number>(0);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
 
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [chatToDeleteId, setChatToDeleteId] = useState<string | null>(null);
+
+  // Mobile detection and responsive sidebar management
+  useEffect(() => {
+    const checkIsMobile = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < 768); // md breakpoint
+      
+      // Auto-close mobile sidebar when switching to desktop
+      if (width >= 768) {
+        setIsMobileSidebarOpen(false);
+      }
+    };
+
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
 
   useEffect(() => {
     const previousChatId = currentChatId;
@@ -38,7 +57,17 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
   };
 
   const toggleSidebar = (): void => {
-    setSidebarCollapsed((prev) => !prev);
+    if (isMobile) {
+      setIsMobileSidebarOpen(prev => !prev);
+    } else {
+      setSidebarCollapsed((prev) => !prev);
+    }
+  };
+
+  const closeMobileSidebar = (): void => {
+    if (isMobile) {
+      setIsMobileSidebarOpen(false);
+    }
   };
 
   const openDeleteConfirmModal = (chatId: string): void => {
@@ -83,30 +112,55 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
   }, [themeMode]);
 
   return (
-    <div className="flex min-h-screen w-full bg-[var(--bg-body)] transition-colors duration-300">
+    <div className="flex min-h-screen w-full bg-[var(--bg-body)] transition-colors duration-300 relative">
+      {/* Mobile Sidebar Overlay */}
+      {isMobile && isMobileSidebarOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={closeMobileSidebar}
+          className="fixed inset-0 bg-black bg-opacity-50 z-40"
+        />
+      )}
+
+      {/* Sidebar */}
       <motion.div
         initial={false}
         animate={{
-          width: sidebarCollapsed ? "4rem" : "16rem",
+          width: isMobile 
+            ? (isMobileSidebarOpen ? "16rem" : "0rem")
+            : (sidebarCollapsed ? "4rem" : "16rem"),
+          x: isMobile && !isMobileSidebarOpen ? "-16rem" : "0rem"
         }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
-        className="flex-shrink-0 border-r"
-        style={{ borderColor: "var(--border-color)" }}
+        className={`
+          flex-shrink-0 border-r h-full
+          ${isMobile ? 'fixed left-0 top-0 z-50' : 'relative'}
+          ${isMobile && !isMobileSidebarOpen ? 'overflow-hidden' : ''}
+        `}
+        style={{ 
+          borderColor: "var(--border-color)",
+          height: isMobile ? "100vh" : "auto"
+        }}
       >
         <div className="glass-effect h-full">
           <SideBar
             onToggleTheme={toggleTheme}
             themeMode={themeMode}
-            collapsed={sidebarCollapsed}
+            collapsed={!isMobile && sidebarCollapsed}
             onToggleCollapse={toggleSidebar}
             currentChatId={currentChatId}
             onOpenDeleteConfirm={openDeleteConfirmModal}
-            refreshChatsTrigger={chatRefreshKey} // Pass the new prop
+            refreshChatsTrigger={chatRefreshKey}
+            isMobile={isMobile}
+            onCloseMobile={closeMobileSidebar}
           />
         </div>
       </motion.div>
       
-      <div className="flex-1 overflow-hidden">
+      {/* Main Content */}
+      <div className={`flex-1 overflow-hidden ${isMobile ? 'w-full' : ''}`}>
         <AnimatePresence mode="wait">
           <motion.div
             key={conversationKey}
@@ -116,10 +170,16 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
             transition={{ duration: 0.3 }}
             className="h-full"
           >
-            <ConversationContainer chatId={currentChatId} themeMode={themeMode} />
+            <ConversationContainer 
+              chatId={currentChatId} 
+              themeMode={themeMode}
+              isMobile={isMobile}
+              onToggleSidebar={toggleSidebar}
+            />
           </motion.div>
         </AnimatePresence>
       </div>
+      
       <AlertDialog
         isOpen={isConfirmModalOpen}
         onClose={closeDeleteConfirmModal}
