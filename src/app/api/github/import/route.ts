@@ -33,6 +33,7 @@ interface GitHubFile {
 
 interface GitHubImportRequest {
   repoUrl: string;
+  selectedFiles: string[];
   branch?: string;
 }
 
@@ -61,7 +62,10 @@ function parseGitHubUrl(url: string): { owner: string; repo: string } {
   }
 }
 
-function shouldIncludeFile(path: string): boolean {
+function shouldIncludeFile(path: string, selectedFiles?: string[]): boolean {
+  if (selectedFiles) {
+    return selectedFiles.includes(path);
+  }
   const ext = path.substring(path.lastIndexOf("."));
   return SUPPORTED_EXTENSIONS.includes(ext);
 }
@@ -107,6 +111,7 @@ async function fetchGitHubFiles(
   octokit: Octokit,
   owner: string,
   repo: string,
+  selectedFiles?: string[],
   branch?: string
 ): Promise<GitHubFile[]> {
   try {
@@ -127,10 +132,10 @@ async function fetchGitHubFiles(
     const files: GitHubFile[] = [];
     const filePromises: Promise<void>[] = [];
 
-    // Filter for supported file types
+    // Filter for selected files (or supported file types if no selection)
     const supportedFiles = tree.data.tree.filter(
       (item) =>
-        item.type === "blob" && item.path && shouldIncludeFile(item.path)
+        item.type === "blob" && item.path && shouldIncludeFile(item.path, selectedFiles)
     );
 
     // Fetch file contents in parallel (with some throttling)
@@ -263,13 +268,23 @@ export async function POST(
     }
 
     // Parse request
-    const { repoUrl, branch }: GitHubImportRequest = await req.json();
+    const { repoUrl, selectedFiles, branch }: GitHubImportRequest = await req.json();
 
     if (!repoUrl) {
       return NextResponse.json(
         {
           success: false,
           error: "Repository URL is required",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!selectedFiles || selectedFiles.length === 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "At least one file must be selected",
         },
         { status: 400 }
       );
@@ -284,13 +299,13 @@ export async function POST(
     });
 
     // Fetch repository files
-    const files = await fetchGitHubFiles(octokit, owner, repo, branch);
+    const files = await fetchGitHubFiles(octokit, owner, repo, selectedFiles, branch);
 
     if (files.length === 0) {
       return NextResponse.json(
         {
           success: false,
-          error: "No supported files found in repository",
+          error: "No selected files found in repository",
         },
         { status: 404 }
       );

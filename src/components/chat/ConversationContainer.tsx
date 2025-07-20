@@ -43,12 +43,12 @@ function ConversationContainer({ chatId, themeMode }: ConversationContainerProps
     setPendingGitHubAttachment(null);
   };
 
-  const handleGitHubImport = async (repoUrl: string, branch?: string) => {
+  const handleGitHubImport = async (repoUrl: string, selectedFiles: string[], branch?: string) => {
     try {
       const response = await fetch('/api/github/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ repoUrl, branch }),
+        body: JSON.stringify({ repoUrl, selectedFiles, branch }),
       });
 
       if (!response.ok) {
