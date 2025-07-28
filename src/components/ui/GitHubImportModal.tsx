@@ -345,7 +345,7 @@ export default function GitHubImportModal({
 
                 <div className="mt-4 p-3 bg-[var(--bg-tertiary)] rounded-lg">
                   <p className="text-xs text-[var(--text-muted)]">
-                    <strong>Note:</strong> After fetching the repository structure, you'll be able to select specific files and folders to import.
+                    <strong>Note:</strong> After fetching the repository structure, you&apos;ll be able to select specific files and folders to import.
                   </p>
                 </div>
               </div>

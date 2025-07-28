@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 import { useSession, signIn, signOut } from "next-auth/react";
+import UpgradeModal from "../subscription/UpgradeModal";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 
@@ -315,6 +316,13 @@ function SideBar({
        <div className="mt-auto flex flex-col gap-2">
         {/* User Authentication */}
         <UserAuth collapsed={collapsed} />
+
+        {/* Upgrade Button */}
+        {!collapsed && (
+          <div className="p-2">
+            <UpgradeModal />
+          </div>
+        )}
 
         {/* Theme Toggle */}
         <motion.button

@@ -19,6 +19,7 @@ export const authOptions: AuthOptions = {
     async session({ session, user }: { session: any; user: any }) {
       if (session.user) {
         session.user.id = user.id;
+        session.user.subscriptionTier = user.subscriptionTier || 'free';
       }
       return session;
     },

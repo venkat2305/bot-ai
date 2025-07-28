@@ -15,6 +15,16 @@ const UserSchema = new mongoose.Schema({
   emailVerified: {
     type: Date,
   },
+  subscriptionTier: {
+    type: String,
+    enum: ['free', 'pro'],
+    default: 'free',
+  },
+  subscriptionId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Subscription',
+    default: null,
+  },
 });
 
-export default mongoose.models.User || mongoose.model('User', UserSchema); 
+export default mongoose.models.User || mongoose.model('User', UserSchema);

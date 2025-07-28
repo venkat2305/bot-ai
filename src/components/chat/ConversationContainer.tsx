@@ -7,6 +7,8 @@ import useConversation from "../../hooks/useConversation";
 import { ImageAttachment, GitHubAttachment } from "@/types/chat";
 import { useRouter } from 'next/navigation';
 import GitHubImportModal from "../ui/GitHubImportModal";
+import ProFeatureGate from "../ui/ProFeatureGate";
+import { PERMISSIONS } from "@/lib/permissions";
 
 interface ConversationContainerProps {
   chatId?: string;
@@ -204,11 +206,16 @@ function ConversationContainer({ chatId, themeMode, isMobile = false, onToggleSi
         )}
       </div>
 
-      <GitHubImportModal
-        isOpen={isGitHubModalOpen}
-        onClose={() => setIsGitHubModalOpen(false)}
-        onImport={handleGitHubImport}
-      />
+      <ProFeatureGate
+        permission={PERMISSIONS.GITHUB_IMPORT}
+        fallback={null}
+      >
+        <GitHubImportModal
+          isOpen={isGitHubModalOpen}
+          onClose={() => setIsGitHubModalOpen(false)}
+          onImport={handleGitHubImport}
+        />
+      </ProFeatureGate>
     </div>
   );
 }
