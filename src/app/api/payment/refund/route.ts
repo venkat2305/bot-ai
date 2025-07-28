@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
+import { withRBAC } from '@/lib/rbac';
+import { PERMISSIONS } from '@/lib/permissions';
 import { RazorpayService } from '@/lib/razorpay';
 import dbConnect from '@/lib/mongodb';
 import User from '@/server/models/User';
@@ -8,13 +8,8 @@ import Payment from '@/server/models/Payment';
 import Subscription from '@/server/models/Subscription';
 import mongoose from 'mongoose';
 
-export async function POST(req: NextRequest) {
+async function handleRefund(req: NextRequest, context?: any, user?: any) {
   try {
-    // Authenticate user (admin check could be added here)
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     await dbConnect();
     
@@ -69,7 +64,7 @@ export async function POST(req: NextRequest) {
         ...notes,
         reason,
         userId: payment.userId.toString(),
-        processedBy: session.user.id
+        processedBy: user.id
       }
     });
 
@@ -103,7 +98,7 @@ export async function POST(req: NextRequest) {
                   razorpayRefundId: razorpayRefund?.id,
                 refundSpeed: speed,
                 refundReason: reason,
-                processedBy: session.user.id,
+                processedBy: user.id,
                 processedAt: new Date()
               }
             }
@@ -200,12 +195,8 @@ export async function POST(req: NextRequest) {
 }
 
 // GET endpoint to fetch refund history for a payment
-export async function GET(req: NextRequest) {
+async function handleGetRefundHistory(req: NextRequest, context?: any, user?: any) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const { searchParams } = new URL(req.url);
     const paymentId = searchParams.get('paymentId');
@@ -219,7 +210,7 @@ export async function GET(req: NextRequest) {
     // Find payment and check user ownership
     const payment = await Payment.findOne({
       razorpayPaymentId: paymentId,
-      userId: session.user.id
+      userId: user.id
     });
 
     if (!payment) {
@@ -249,4 +240,8 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}
+
+// Export the handlers with RBAC protection
+export const POST = withRBAC(PERMISSIONS.PAYMENT_REFUND, handleRefund);
+export const GET = withRBAC(PERMISSIONS.PAYMENT_HISTORY, handleGetRefundHistory); 

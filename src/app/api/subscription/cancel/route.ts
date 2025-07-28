@@ -1,27 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
+import { withRBAC } from '@/lib/rbac';
+import { PERMISSIONS } from '@/lib/permissions';
 import { RazorpayService } from '@/lib/razorpay';
 import dbConnect from '@/lib/mongodb';
 import User from '@/server/models/User';
 import Subscription from '@/server/models/Subscription';
 import mongoose from 'mongoose';
 
-export async function POST(req: NextRequest) {
+async function handleCancelSubscription(req: NextRequest, context?: any, authenticatedUser?: any) {
   try {
-    // Authenticate user
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     await dbConnect();
     
     // Get request body
     const { cancelAtCycleEnd = false, reason } = await req.json();
 
     // Get user details
-    const user = await User.findById(session.user.id).populate('subscriptionId');
+    const user = await User.findById(authenticatedUser.id).populate('subscriptionId');
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
@@ -124,19 +118,14 @@ export async function POST(req: NextRequest) {
 }
 
 // GET endpoint to check cancellation status
-export async function GET(req: NextRequest) {
+async function handleGetCancellationStatus(req: NextRequest, context?: any, authenticatedUser?: any) {
   try {
-    // Authenticate user
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     await dbConnect();
 
     // Get user's subscription
     const subscription = await Subscription.findOne({
-      userId: session.user.id
+      userId: authenticatedUser.id
     }).sort({ createdAt: -1 }); // Get latest subscription
 
     if (!subscription) {
@@ -171,4 +160,8 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}
+
+// Export the handlers with RBAC protection
+export const POST = withRBAC(PERMISSIONS.SUBSCRIPTION_CANCEL, handleCancelSubscription);
+export const GET = withRBAC(PERMISSIONS.SUBSCRIPTION_STATUS, handleGetCancellationStatus); 

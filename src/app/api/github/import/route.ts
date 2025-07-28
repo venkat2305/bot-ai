@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { withRBAC } from "@/lib/rbac";
+import { PERMISSIONS } from "@/lib/permissions";
 import { Octokit } from "@octokit/rest";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { v4 as uuidv4 } from "uuid";
@@ -318,22 +318,12 @@ function formatRepositoryContent(
   return content;
 }
 
-export async function POST(
-  req: NextRequest
+async function handleGitHubImport(
+  req: NextRequest,
+  context?: any,
+  user?: any
 ): Promise<NextResponse<GitHubImportResponse>> {
   try {
-    // Check authentication
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Unauthorized",
-        },
-        { status: 401 }
-      );
-    }
-
     // Check GitHub PAT
     const GITHUB_PAT = process.env.GITHUB_PAT;
     if (!GITHUB_PAT) {
@@ -446,3 +436,6 @@ export async function POST(
     );
   }
 }
+
+// Export the handler with RBAC protection
+export const POST = withRBAC(PERMISSIONS.GITHUB_IMPORT, handleGitHubImport);

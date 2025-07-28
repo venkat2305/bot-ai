@@ -2,12 +2,14 @@
 
 import { ReactNode, useState } from 'react';
 import { Crown, Lock } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 import { useSubscription } from '@/hooks/useSubscription';
 import UpgradeModal from '@/components/subscription/UpgradeModal';
+import { Permission } from '@/lib/permissions';
 
 interface ProFeatureGateProps {
   children: ReactNode;
-  feature: string;
+  feature: Permission;
   fallback?: ReactNode;
   showUpgradePrompt?: boolean;
   upgradePromptTitle?: string;
@@ -22,8 +24,12 @@ export default function ProFeatureGate({
   upgradePromptTitle,
   upgradePromptDescription
 }: ProFeatureGateProps) {
-  const { hasPermission, isPro, loading } = useSubscription();
+  const { data: session } = useSession();
+  const { isPro, loading } = useSubscription();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  // Check if user has the required permission
+  const hasRequiredPermission = session?.user?.permissions?.includes(feature) || false;
 
   // Show loading state
   if (loading) {
@@ -36,7 +42,7 @@ export default function ProFeatureGate({
   }
 
   // Check if user has permission for this feature
-  const hasAccess = hasPermission(feature) || isPro;
+  const hasAccess = hasRequiredPermission || isPro;
 
   // If user has access, render the feature
   if (hasAccess) {
@@ -139,13 +145,16 @@ export function ProBadge({ className }: { className?: string }) {
 }
 
 // Hook for checking permissions in components
-export function useProFeature(feature: string) {
-  const { hasPermission, isPro, loading } = useSubscription();
+export function useProFeature(feature: Permission) {
+  const { data: session } = useSession();
+  const { isPro, loading } = useSubscription();
+  
+  const hasRequiredPermission = session?.user?.permissions?.includes(feature) || false;
   
   return {
-    hasAccess: hasPermission(feature) || isPro,
+    hasAccess: hasRequiredPermission || isPro,
     isPro,
     loading,
-    requiresUpgrade: !hasPermission(feature) && !isPro
+    requiresUpgrade: !hasRequiredPermission && !isPro
   };
 } 

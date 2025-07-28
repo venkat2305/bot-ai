@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
+import { Permission } from '@/lib/permissions';
 
 export interface SubscriptionData {
   user: {
@@ -28,7 +29,7 @@ export interface SubscriptionData {
     createdAt: string;
     updatedAt: string;
   } | null;
-  permissions: string[];
+  permissions: Permission[];
   canUpgrade: boolean;
   hasActiveSubscription: boolean;
 }
@@ -88,7 +89,7 @@ export function useSubscription() {
     }
   }, [session?.user?.id, refreshSubscription]);
 
-  const hasPermission = useCallback((permission: string) => {
+  const hasPermission = useCallback((permission: Permission) => {
     return subscriptionData?.permissions.includes(permission) || false;
   }, [subscriptionData?.permissions]);
 

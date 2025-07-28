@@ -4,6 +4,7 @@ import { X, Github, Loader2, AlertCircle, CheckSquare, Square, RefreshCw } from 
 import clsx from 'clsx';
 import FileTreeNode, { FileTreeItem } from './FileTreeNode';
 import ProFeatureGate from './ProFeatureGate';
+import { PERMISSIONS } from '@/lib/permissions';
 
 interface GitHubImportModalProps {
   isOpen: boolean;
@@ -226,11 +227,11 @@ export default function GitHubImportModal({
             )}
             onClick={(e) => e.stopPropagation()}
           >
-            <ProFeatureGate 
-              feature="github:import"
-              upgradePromptTitle="GitHub Repository Import"
-              upgradePromptDescription="Import and analyze entire GitHub repositories with AI assistance."
-              fallback={
+                            <ProFeatureGate
+                  feature={PERMISSIONS.GITHUB_IMPORT}
+                  upgradePromptTitle="GitHub Repository Import"
+                  upgradePromptDescription="Import and analyze entire GitHub repositories with AI assistance."
+                  fallback={
                 <div className="text-center">
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
