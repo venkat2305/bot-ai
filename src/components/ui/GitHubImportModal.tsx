@@ -229,27 +229,11 @@ export default function GitHubImportModal({
           >
                             <ProFeatureGate
                   feature={PERMISSIONS.GITHUB_IMPORT}
-                  upgradePromptTitle="GitHub Repository Import"
-                  upgradePromptDescription="Import and analyze entire GitHub repositories with AI assistance."
-                  fallback={
-                <div className="text-center">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                      <Github className="w-6 h-6 text-[var(--primary-color)]" />
-                      <h2 className="text-xl font-semibold text-[var(--text-color)]">
-                        Import GitHub Repository
-                      </h2>
-                    </div>
-                    <button
-                      onClick={handleClose}
-                      className="text-[var(--text-muted)] hover:text-[var(--text-color)] transition-colors"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
-              }
-            >
+                  upgradePromptTitle="🚀 GitHub Repository Import - Pro Feature"
+                  upgradePromptDescription="Import and analyze entire GitHub repositories with AI assistance. Upload any public repository, select specific files, and get comprehensive AI-powered code analysis. Perfect for learning from open-source projects, code reviews, and understanding complex codebases."
+                  showCloseButton={true}
+                  onClose={handleClose}
+                >
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <Github className="w-6 h-6 text-[var(--primary-color)]" />

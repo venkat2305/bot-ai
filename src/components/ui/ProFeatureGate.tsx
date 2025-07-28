@@ -1,7 +1,7 @@
 'use client';
 
 import { ReactNode, useState } from 'react';
-import { Crown, Lock } from 'lucide-react';
+import { Crown, Lock, X } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useSubscription } from '@/hooks/useSubscription';
 import UpgradeModal from '@/components/subscription/UpgradeModal';
@@ -14,6 +14,8 @@ interface ProFeatureGateProps {
   showUpgradePrompt?: boolean;
   upgradePromptTitle?: string;
   upgradePromptDescription?: string;
+  showCloseButton?: boolean;
+  onClose?: () => void;
 }
 
 export default function ProFeatureGate({
@@ -22,7 +24,9 @@ export default function ProFeatureGate({
   fallback,
   showUpgradePrompt = true,
   upgradePromptTitle,
-  upgradePromptDescription
+  upgradePromptDescription,
+  showCloseButton = false,
+  onClose
 }: ProFeatureGateProps) {
   const { data: session } = useSession();
   const { isPro, loading } = useSubscription();
@@ -62,6 +66,16 @@ export default function ProFeatureGate({
     return (
       <>
         <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-[var(--border-color)] rounded-lg p-6">
+          {showCloseButton && onClose && (
+            <div className="flex justify-end mb-4">
+              <button
+                onClick={onClose}
+                className="text-[var(--text-muted)] hover:text-[var(--text-color)] transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          )}
           <div className="flex items-center gap-3 mb-3">
             <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full">
               <Crown className="w-5 h-5 text-white" />
@@ -106,12 +120,14 @@ export default function ProFeatureGate({
 // Helper functions to get default titles and descriptions based on feature
 function getDefaultTitle(feature: string): string {
   const titles: Record<string, string> = {
-    'github:import': 'GitHub Repository Import',
-    'chat:unlimited': 'Unlimited Chat History',
-    'models:premium': 'Premium AI Models',
-    'export:conversations': 'Export Conversations',
-    'support:priority': 'Priority Support',
-    default: 'Pro Feature'
+    'github:import': '🚀 GitHub Repository Import - Pro Feature',
+    'chats:unlimited': '💬 Unlimited Chat History',
+    'ai:priority_models': '🤖 Premium AI Models',
+    'export:conversations': '📄 Export Conversations',
+    'support:priority': '⚡ Priority Support',
+    'payment:refund': '💰 Payment Management',
+    'subscription:cancel': '⚙️ Subscription Management',
+    default: '👑 Pro Feature'
   };
   
   return titles[feature] || titles.default;
@@ -119,11 +135,13 @@ function getDefaultTitle(feature: string): string {
 
 function getDefaultDescription(feature: string): string {
   const descriptions: Record<string, string> = {
-    'github:import': 'Import entire GitHub repositories for AI analysis and assistance.',
-    'chat:unlimited': 'Keep unlimited chat history and never lose your conversations.',
-    'models:premium': 'Access to the latest and most powerful AI models.',
-    'export:conversations': 'Export your conversations in various formats.',
+    'github:import': 'Import entire GitHub repositories for AI analysis and assistance. Perfect for code reviews, learning from open-source projects, and understanding complex codebases.',
+    'chats:unlimited': 'Keep unlimited chat history and never lose your conversations. Access all your past interactions anytime.',
+    'ai:priority_models': 'Access to the latest and most powerful AI models with priority processing.',
+    'export:conversations': 'Export your conversations in various formats for documentation and sharing.',
     'support:priority': 'Get priority customer support and faster response times.',
+    'payment:refund': 'Manage your payments and request refunds when needed.',
+    'subscription:cancel': 'Full control over your subscription with flexible cancellation options.',
     default: 'Unlock this premium feature with a Pro subscription.'
   };
   
