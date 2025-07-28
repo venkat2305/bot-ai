@@ -28,9 +28,9 @@ export default function ProFeatureGate({
   // Show loading state
   if (loading) {
     return (
-      <div className="animate-pulse bg-gray-100 rounded-lg p-4">
-        <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-        <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+      <div className="animate-pulse bg-[var(--bg-tertiary)] rounded-lg p-4">
+        <div className="h-4 bg-[var(--border-color)] rounded w-3/4 mb-2"></div>
+        <div className="h-4 bg-[var(--border-color)] rounded w-1/2"></div>
       </div>
     );
   }
@@ -55,14 +55,14 @@ export default function ProFeatureGate({
 
     return (
       <>
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6">
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-[var(--border-color)] rounded-lg p-6">
           <div className="flex items-center gap-3 mb-3">
             <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full">
               <Crown className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">{defaultTitle}</h3>
-              <p className="text-sm text-gray-600">{defaultDescription}</p>
+              <h3 className="font-semibold text-[var(--text-color)]">{defaultTitle}</h3>
+              <p className="text-sm text-[var(--text-muted)]">{defaultDescription}</p>
             </div>
           </div>
           
@@ -74,8 +74,8 @@ export default function ProFeatureGate({
               <Crown className="w-4 h-4" />
               Upgrade to Pro
             </button>
-            <div className="text-xs text-gray-500">
-              ₹100/month • Cancel anytime
+            <div className="text-xs text-[var(--text-muted)]">
+              Starting at ₹1/month • Cancel anytime
             </div>
           </div>
         </div>
@@ -90,9 +90,9 @@ export default function ProFeatureGate({
 
   // If no upgrade prompt, show locked state
   return (
-    <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
-      <Lock className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-      <p className="text-gray-600">This feature requires a Pro subscription</p>
+    <div className="bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg p-6 text-center">
+      <Lock className="w-8 h-8 text-[var(--text-muted)] mx-auto mb-2" />
+      <p className="text-[var(--text-muted)]">This feature requires a Pro subscription</p>
     </div>
   );
 }

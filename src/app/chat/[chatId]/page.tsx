@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import SideBar from "@/components/chat/SideBar";
 import ConversationContainer from "@/components/chat/ConversationContainer";
 import AlertDialog from '@/components/ui/AlertDialog';
+import UpgradeModal from '@/components/subscription/UpgradeModal';
 
 interface Chat {
   id: string;
@@ -23,6 +24,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
 
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [chatToDeleteId, setChatToDeleteId] = useState<string | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // Mobile detection and responsive sidebar management
   useEffect(() => {
@@ -155,6 +157,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
             refreshChatsTrigger={chatRefreshKey}
             isMobile={isMobile}
             onCloseMobile={closeMobileSidebar}
+            onUpgrade={() => setShowUpgradeModal(true)}
           />
         </div>
       </motion.div>
@@ -187,6 +190,13 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
         title="Confirm Deletion"
         description="Are you sure you want to delete this chat? This action cannot be undone."
         confirmText="Delete"
+      />
+      
+      {/* Upgrade Modal - Rendered at page level for full screen coverage */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        onSuccess={() => setShowUpgradeModal(false)}
       />
     </div>
   );

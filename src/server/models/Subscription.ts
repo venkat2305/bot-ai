@@ -22,7 +22,7 @@ const SubscriptionSchema = new mongoose.Schema(
     planId: {
       type: String,
       required: true,
-      enum: ['pro_monthly'], // Can be expanded for future plans
+      enum: ['test_monthly', 'pro_monthly'], // Can be expanded for future plans
     },
     status: {
       type: String,

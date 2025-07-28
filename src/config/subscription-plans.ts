@@ -16,6 +16,25 @@ export interface SubscriptionPlan {
 }
 
 export const SUBSCRIPTION_PLANS: Record<string, SubscriptionPlan> = {
+  TEST_MONTHLY: {
+    id: 'plan_QyUF3Pke1IYFcA',        // Test plan ID from dashboard
+    internalId: 'test_monthly',        // Internal reference
+    name: 'Test Monthly',
+    description: 'Test subscription for development and testing',
+    price: 100,                        // ₹1 in paise
+    currency: 'INR',
+    interval: 1,
+    period: 'monthly',
+    features: [
+      'GitHub Repository Import',
+      'Unlimited Chat History',
+      'Priority AI Models',
+      'Advanced Code Analysis',
+      'Priority Support',
+      'Export Conversations',
+    ],
+    popular: false,
+  },
   PRO_MONTHLY: {
     id: 'plan_QwuAA00ZJKNHHX',        // Razorpay plan ID from dashboard
     internalId: 'pro_monthly',         // Internal reference

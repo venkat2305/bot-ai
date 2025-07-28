@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { X, Check, Crown, Loader2 } from 'lucide-react';
-import { SUBSCRIPTION_PLANS } from '@/config/subscription-plans';
+import { SUBSCRIPTION_PLANS, formatPrice } from '@/config/subscription-plans';
 import { useSubscription } from '@/hooks/useSubscription';
 
 interface UpgradeModalProps {
@@ -23,8 +23,9 @@ export default function UpgradeModal({ isOpen, onClose, onSuccess }: UpgradeModa
   const { createSubscription, refreshSubscription } = useSubscription();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState(SUBSCRIPTION_PLANS.TEST_MONTHLY);
 
-  const proMonthlyPlan = SUBSCRIPTION_PLANS.PRO_MONTHLY;
+  const availablePlans = Object.values(SUBSCRIPTION_PLANS);
 
   const handleUpgrade = async () => {
     if (!session?.user) {
@@ -37,7 +38,7 @@ export default function UpgradeModal({ isOpen, onClose, onSuccess }: UpgradeModa
       setError(null);
 
       // Create subscription with backend
-      const subscriptionResult = await createSubscription(proMonthlyPlan.id);
+      const subscriptionResult = await createSubscription(selectedPlan.id);
 
       if (!subscriptionResult.success) {
         throw new Error('Failed to create subscription');
@@ -47,8 +48,8 @@ export default function UpgradeModal({ isOpen, onClose, onSuccess }: UpgradeModa
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         subscription_id: subscriptionResult.subscriptionId,
-        name: 'Bot AI Pro',
-        description: proMonthlyPlan.description,
+        name: `Bot AI ${selectedPlan.name}`,
+        description: selectedPlan.description,
         image: '/logo192.png',
         handler: async function (response: any) {
           try {
@@ -67,7 +68,7 @@ export default function UpgradeModal({ isOpen, onClose, onSuccess }: UpgradeModa
         },
         notes: {
           userId: session.user.id,
-          planId: proMonthlyPlan.internalId,
+          planId: selectedPlan.internalId,
         },
         theme: {
           color: '#3B82F6',
@@ -121,16 +122,16 @@ export default function UpgradeModal({ isOpen, onClose, onSuccess }: UpgradeModa
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-[var(--card-bg)] rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto border border-[var(--border-color)]">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
+        <div className="flex items-center justify-between p-6 border-b border-[var(--border-color)]">
           <div className="flex items-center gap-2">
             <Crown className="w-6 h-6 text-yellow-500" />
-            <h2 className="text-2xl font-bold">Upgrade to Pro</h2>
+            <h2 className="text-2xl font-bold text-[var(--text-color)]">Choose Your Plan</h2>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-[var(--text-muted)] hover:text-[var(--text-color)] transition-colors"
             disabled={loading}
           >
             <X className="w-6 h-6" />
@@ -139,27 +140,52 @@ export default function UpgradeModal({ isOpen, onClose, onSuccess }: UpgradeModa
 
         {/* Content */}
         <div className="p-6">
-          {/* Plan Details */}
-          <div className="text-center mb-6">
-            <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg p-6 mb-4">
-              <h3 className="text-2xl font-bold mb-2">{proMonthlyPlan.name}</h3>
-              <div className="text-3xl font-bold mb-2">
-                {proMonthlyPlan.currency === 'INR' ? '₹' : '$'}
-                {proMonthlyPlan.price / 100}
-                <span className="text-lg font-normal opacity-90">/month</span>
-              </div>
-              <p className="opacity-90">{proMonthlyPlan.description}</p>
+          {/* Plan Selection */}
+          <div className="mb-6">
+            <h4 className="font-semibold mb-3 text-[var(--text-color)]">Select a plan:</h4>
+            <div className="space-y-3">
+              {availablePlans.map((plan) => (
+                <div
+                  key={plan.id}
+                  className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                    selectedPlan.id === plan.id
+                      ? 'border-[var(--primary-color)] bg-[var(--bg-tertiary)]'
+                      : 'border-[var(--border-color)] hover:border-[var(--text-muted)]'
+                  }`}
+                  onClick={() => setSelectedPlan(plan)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-[var(--text-color)]">{plan.name}</h3>
+                        {plan.popular && (
+                          <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
+                            Most Popular
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-[var(--text-muted)] mt-1">{plan.description}</p>
+                    </div>
+                    <div className="text-right ml-4">
+                      <div className="text-xl font-bold text-[var(--text-color)]">
+                        {formatPrice(plan.price, plan.currency)}
+                      </div>
+                      <div className="text-sm text-[var(--text-muted)]">per month</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Features List */}
+          {/* Selected Plan Features */}
           <div className="mb-6">
-            <h4 className="font-semibold mb-3">What you'll get:</h4>
+            <h4 className="font-semibold mb-3 text-[var(--text-color)]">What you'll get with {selectedPlan.name}:</h4>
             <div className="space-y-2">
-              {proMonthlyPlan.features.map((feature, index) => (
+              {selectedPlan.features.map((feature, index) => (
                 <div key={index} className="flex items-center gap-3">
                   <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
-                  <span className="text-gray-700">{feature}</span>
+                  <span className="text-[var(--text-color)]">{feature}</span>
                 </div>
               ))}
             </div>
@@ -167,8 +193,8 @@ export default function UpgradeModal({ isOpen, onClose, onSuccess }: UpgradeModa
 
           {/* Error Message */}
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-600 text-sm">{error}</p>
+            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
             </div>
           )}
 
@@ -176,7 +202,7 @@ export default function UpgradeModal({ isOpen, onClose, onSuccess }: UpgradeModa
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex-1 px-4 py-2 border border-[var(--border-color)] rounded-lg hover:bg-[var(--bg-tertiary)] transition-colors text-[var(--text-color)]"
               disabled={loading}
             >
               Maybe Later
@@ -184,7 +210,7 @@ export default function UpgradeModal({ isOpen, onClose, onSuccess }: UpgradeModa
             <button
               onClick={handleUpgradeClick}
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-2 bg-[var(--primary-color)] text-white rounded-lg hover:bg-[var(--primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
@@ -192,14 +218,14 @@ export default function UpgradeModal({ isOpen, onClose, onSuccess }: UpgradeModa
                   Processing...
                 </>
               ) : (
-                'Upgrade Now'
+                `Subscribe for ${formatPrice(selectedPlan.price)}/month`
               )}
             </button>
           </div>
 
           {/* Security Note */}
-          <div className="mt-4 text-xs text-gray-500 text-center">
-            <p>Secured by Razorpay • You can cancel anytime</p>
+          <div className="mt-4 text-xs text-[var(--text-muted)] text-center">
+            <p>Secured by Razorpay • You can cancel anytime • Test plan for development</p>
           </div>
         </div>
       </div>

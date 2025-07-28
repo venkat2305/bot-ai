@@ -49,8 +49,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Create Razorpay customer
-    const customerResult = await RazorpayService.createCustomer({
+    // Create or fetch existing Razorpay customer
+    const customerResult = await RazorpayService.createOrFetchCustomer({
       name: user.name || user.email,
       email: user.email,
       notes: {
@@ -60,9 +60,9 @@ export async function POST(req: NextRequest) {
     });
 
     if (!customerResult.success) {
-      console.error('Failed to create Razorpay customer:', customerResult.error);
+      console.error('Failed to create or fetch Razorpay customer:', customerResult.error);
       return NextResponse.json(
-        { error: 'Failed to create customer' },
+        { error: 'Failed to create or fetch customer' },
         { status: 500 }
       );
     }

@@ -21,7 +21,6 @@ import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import { useSubscription } from "@/hooks/useSubscription";
 import { ProBadge } from "@/components/ui/ProFeatureGate";
-import UpgradeModal from "@/components/subscription/UpgradeModal";
 
 interface Chat {
   uuid: string;
@@ -39,6 +38,7 @@ interface SideBarProps {
   refreshChatsTrigger?: number;
   isMobile?: boolean;
   onCloseMobile?: () => void;
+  onUpgrade?: () => void;
 }
 
 function UserAuth({ collapsed }: { collapsed: boolean }) {
@@ -136,10 +136,10 @@ function SideBar({
   refreshChatsTrigger,
   isMobile = false,
   onCloseMobile,
+  onUpgrade,
 }: SideBarProps) {
   const [recentChats, setRecentChats] = useState<Chat[]>([]);
   const { isPro, canUpgrade, subscriptionData } = useSubscription();
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const { data: session, status } = useSession();
   const router = useRouter();
 
@@ -328,49 +328,49 @@ function SideBar({
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             className={clsx(
-              "flex items-center gap-2 rounded-lg transition-all duration-200 w-full border",
+              "flex items-center gap-2 rounded-lg transition-all duration-200 w-full border border-[var(--border-color)]",
               collapsed ? "justify-center p-3" : "p-2",
               isPro 
-                ? "bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-200 hover:from-yellow-100 hover:to-yellow-200" 
-                : "bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200 hover:from-blue-100 hover:to-purple-100"
+                ? "bg-gradient-to-r from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 hover:from-yellow-100 hover:to-yellow-200 dark:hover:from-yellow-900/30 dark:hover:to-yellow-800/30" 
+                : "bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 hover:from-blue-100 hover:to-purple-100 dark:hover:from-blue-900/30 dark:hover:to-purple-900/30"
             )}
           >
             {isPro ? (
               <>
                 <Crown className={clsx("text-yellow-600", collapsed ? "w-5 h-5" : "w-4 h-4")} />
                 {!collapsed && (
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1">
-                      <span className="text-sm font-medium text-yellow-800">Pro</span>
-                      <ProBadge className="ml-auto" />
-                    </div>
-                    <div className="text-xs text-yellow-700 truncate">
-                      {subscriptionData?.subscription?.isActive ? 'Active' : 'Pro Access'}
-                    </div>
-                  </div>
+                                     <div className="flex-1 min-w-0">
+                     <div className="flex items-center gap-1">
+                       <span className="text-sm font-medium text-yellow-800 dark:text-yellow-200">Pro</span>
+                       <ProBadge className="ml-auto" />
+                     </div>
+                     <div className="text-xs text-yellow-700 dark:text-yellow-300 truncate">
+                       {subscriptionData?.subscription?.isActive ? 'Active' : 'Pro Access'}
+                     </div>
+                   </div>
                 )}
               </>
             ) : (
               <>
-                <Crown className={clsx("text-blue-600", collapsed ? "w-5 h-5" : "w-4 h-4")} />
+                <Crown className={clsx("text-blue-600 dark:text-blue-400", collapsed ? "w-5 h-5" : "w-4 h-4")} />
                 {!collapsed && (
                   <div className="flex-1 min-w-0">
-                    <span className="text-sm font-medium text-blue-800">Free Plan</span>
-                    <div className="text-xs text-blue-700">Upgrade to Pro</div>
+                    <span className="text-sm font-medium text-blue-800 dark:text-blue-200">Free Plan</span>
+                    <div className="text-xs text-blue-700 dark:text-blue-300">Upgrade to Pro</div>
                   </div>
                 )}
-                {canUpgrade && (
-                  <button
-                    onClick={() => setShowUpgradeModal(true)}
-                    className={clsx(
-                      "bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors",
-                      collapsed ? "p-1" : "px-2 py-1 text-xs"
-                    )}
-                    title={collapsed ? 'Upgrade to Pro' : undefined}
-                  >
-                    {collapsed ? <Crown className="w-3 h-3" /> : 'Upgrade'}
-                  </button>
-                )}
+                                 {canUpgrade && (
+                   <button
+                     onClick={() => onUpgrade?.()}
+                     className={clsx(
+                       "bg-[var(--primary-color)] text-white rounded-md hover:bg-[var(--primary-hover)] transition-colors",
+                       collapsed ? "p-1" : "px-2 py-1 text-xs"
+                     )}
+                     title={collapsed ? 'Upgrade to Pro' : undefined}
+                   >
+                     {collapsed ? <Crown className="w-3 h-3" /> : 'Upgrade'}
+                   </button>
+                 )}
               </>
             )}
           </motion.div>
@@ -399,13 +399,6 @@ function SideBar({
           )}
         </motion.button>
       </div>
-
-      {/* Upgrade Modal */}
-      <UpgradeModal
-        isOpen={showUpgradeModal}
-        onClose={() => setShowUpgradeModal(false)}
-        onSuccess={() => setShowUpgradeModal(false)}
-      />
     </div>
   );
 }
