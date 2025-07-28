@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Github, Loader2, AlertCircle, CheckSquare, Square, RefreshCw } from 'lucide-react';
 import clsx from 'clsx';
 import FileTreeNode, { FileTreeItem } from './FileTreeNode';
+import ProFeatureGate from './ProFeatureGate';
 
 interface GitHubImportModalProps {
   isOpen: boolean;
@@ -225,6 +226,29 @@ export default function GitHubImportModal({
             )}
             onClick={(e) => e.stopPropagation()}
           >
+            <ProFeatureGate 
+              feature="github:import"
+              upgradePromptTitle="GitHub Repository Import"
+              upgradePromptDescription="Import and analyze entire GitHub repositories with AI assistance."
+              fallback={
+                <div className="text-center">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <Github className="w-6 h-6 text-[var(--primary-color)]" />
+                      <h2 className="text-xl font-semibold text-[var(--text-color)]">
+                        Import GitHub Repository
+                      </h2>
+                    </div>
+                    <button
+                      onClick={handleClose}
+                      className="text-[var(--text-muted)] hover:text-[var(--text-color)] transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              }
+            >
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <Github className="w-6 h-6 text-[var(--primary-color)]" />
@@ -430,6 +454,7 @@ export default function GitHubImportModal({
                 </div>
               </div>
             )}
+            </ProFeatureGate>
           </motion.div>
         </motion.div>
       )}
