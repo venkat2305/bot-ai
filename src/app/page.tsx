@@ -11,10 +11,10 @@ export default function Home() {
 
   useEffect(() => {
     if (status === 'loading') {
-      return; // Do nothing while loading
+      return; 
     }
     if (status === 'unauthenticated') {
-      router.push('/api/auth/signin'); // Redirect to signin if not authenticated
+      router.replace('/landing'); 
       return;
     }
     if (status === 'authenticated') {
