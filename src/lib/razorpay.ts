@@ -1,5 +1,6 @@
 import Razorpay from "razorpay";
 import { validateWebhookSignature } from "razorpay/dist/utils/razorpay-utils";
+import { razorpayCircuitBreaker } from "./circuit-breaker";
 
 // Validate environment variables
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
@@ -35,7 +36,9 @@ export class RazorpayService {
     notes?: Record<string, any>;
   }) {
     try {
-      const customer = await razorpay.customers.create(customerData);
+      const customer = await razorpayCircuitBreaker.execute(async () => {
+        return await razorpay.customers.create(customerData);
+      });
       return { success: true, data: customer };
     } catch (error) {
       console.error("Error creating Razorpay customer:", error);
@@ -112,9 +115,9 @@ export class RazorpayService {
     notes?: Record<string, any>;
   }) {
     try {
-      const subscription = await razorpay.subscriptions.create(
-        subscriptionData
-      );
+      const subscription = await razorpayCircuitBreaker.execute(async () => {
+        return await razorpay.subscriptions.create(subscriptionData);
+      });
       return { success: true, data: subscription };
     } catch (error) {
       console.error("Error creating Razorpay subscription:", error);
@@ -127,7 +130,9 @@ export class RazorpayService {
    */
   static async fetchSubscription(subscriptionId: string) {
     try {
-      const subscription = await razorpay.subscriptions.fetch(subscriptionId);
+      const subscription = await razorpayCircuitBreaker.execute(async () => {
+        return await razorpay.subscriptions.fetch(subscriptionId);
+      });
       return { success: true, data: subscription };
     } catch (error) {
       console.error("Error fetching Razorpay subscription:", error);
@@ -143,10 +148,9 @@ export class RazorpayService {
     cancelAtCycleEnd: boolean = false
   ) {
     try {
-      const subscription = await razorpay.subscriptions.cancel(
-        subscriptionId,
-        cancelAtCycleEnd
-      );
+      const subscription = await razorpayCircuitBreaker.execute(async () => {
+        return await razorpay.subscriptions.cancel(subscriptionId, cancelAtCycleEnd);
+      });
       return { success: true, data: subscription };
     } catch (error) {
       console.error("Error cancelling Razorpay subscription:", error);
@@ -166,7 +170,9 @@ export class RazorpayService {
     }
   ) {
     try {
-      const refund = await razorpay.payments.refund(paymentId, refundData);
+      const refund = await razorpayCircuitBreaker.execute(async () => {
+        return await razorpay.payments.refund(paymentId, refundData);
+      });
       return { success: true, data: refund };
     } catch (error) {
       console.error("Error creating refund:", error);
