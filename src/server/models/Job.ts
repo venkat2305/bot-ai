@@ -72,11 +72,15 @@ const JobSchema = new Schema<IJob>({
   },
   completedAt: {
     type: Date,
-    sparse: true
+    sparse: true,
+    index: true,
+    expires: '30d'
   },
   failedAt: {
     type: Date,
-    sparse: true
+    sparse: true,
+    index: true,
+    expires: '30d'
   },
   error: {
     type: String,
@@ -94,15 +98,5 @@ const JobSchema = new Schema<IJob>({
 JobSchema.index({ status: 1, nextAttemptAt: 1 });
 JobSchema.index({ type: 1, status: 1 });
 JobSchema.index({ status: 1, createdAt: -1 });
-
-// Auto-delete completed/failed jobs after 30 days
-JobSchema.index(
-  { completedAt: 1 }, 
-  { expireAfterSeconds: 30 * 24 * 60 * 60, partialFilterExpression: { status: 'completed' } }
-);
-JobSchema.index(
-  { failedAt: 1 }, 
-  { expireAfterSeconds: 30 * 24 * 60 * 60, partialFilterExpression: { status: 'failed' } }
-);
 
 export default mongoose.models.Job || mongoose.model<IJob>('Job', JobSchema); 

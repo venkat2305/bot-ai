@@ -28,7 +28,7 @@ export class WebhookHandler {
     const session = await mongoose.startSession();
     
     try {
-      let result: { success: boolean; message: string };
+      let result: { success: boolean; message: string } = { success: false, message: 'Not processed' };
       
       await session.withTransaction(async () => {
         // Mark webhook as processed first (idempotency)
@@ -49,7 +49,7 @@ export class WebhookHandler {
       });
 
       console.log(`Webhook ${webhookId} processed successfully:`, result.message);
-      return result!;
+      return result;
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -262,15 +262,27 @@ export class WebhookHandler {
     session: mongoose.ClientSession
   ): Promise<{ success: boolean; message: string }> {
     const paymentEntity = webhookData.payload.payment?.entity;
+    const subscriptionEntity = webhookData.payload.subscription?.entity;
 
     if (!paymentEntity) {
       throw new Error('Payment entity missing in payment.failed webhook');
     }
 
-    // Find the subscription for this payment
-    const subscription = await Subscription.findOne({
-      razorpaySubscriptionId: paymentEntity.subscription_id
-    }).session(session);
+    // Find the subscription using the subscription entity from webhook or fallback to order_id lookup
+    let subscription;
+    if (subscriptionEntity) {
+      subscription = await Subscription.findOne({
+        razorpaySubscriptionId: subscriptionEntity.id
+      }).session(session);
+    } else {
+      // Fallback: try to find subscription by order_id or payment_id
+      subscription = await Subscription.findOne({
+        $or: [
+          { 'metadata.lastOrderId': paymentEntity.order_id },
+          { 'metadata.lastPaymentId': paymentEntity.id }
+        ]
+      }).session(session);
+    }
 
     if (subscription) {
       // Update subscription to past_due status

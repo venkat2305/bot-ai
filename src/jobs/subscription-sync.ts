@@ -106,6 +106,10 @@ async function syncSingleSubscription(subscription: any, result: SyncResult): Pr
   }
 
   const razorpaySubscription = razorpayResult.data;
+  if (!razorpaySubscription) {
+    throw new Error('Razorpay subscription data is undefined');
+  }
+
   const localStatus = subscription.status;
   const razorpayStatus = razorpaySubscription.status;
 
