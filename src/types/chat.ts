@@ -39,4 +39,12 @@ export interface Message {
   mainContent?: string;
   hasActiveReasoning?: boolean;
   useSearchGrounding?: boolean;
-} 
+}
+
+export interface Chat {
+  uuid: string;
+  userId: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+}
