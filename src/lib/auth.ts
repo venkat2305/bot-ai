@@ -15,50 +15,71 @@ export const authOptions: AuthOptions = {
     }),
   ],
   secret: process.env.NEXTAUTH_SECRET,
-  session: {
-    strategy: 'database' as const,
-  },
+  // Use JWT sessions to avoid a DB read on every request
+  session: { strategy: 'jwt' },
   callbacks: {
-    async session({ session, user }: { session: any; user: any }) {
-      if (session.user) {
-        session.user.id = user.id;
-
+    // Populate JWT once on sign-in; avoid per-request DB round-trips
+    async jwt({ token, user }) {
+      // On initial sign-in, user is defined
+      if (user) {
+        // NextAuth sets token.sub; keep our own id as well
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const userId = (user as any).id || (user as any)._id?.toString?.() || token.sub;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (token as any).id = userId;
         try {
-          // Fetch fresh user data with subscription info
           await dbConnect();
-          const userData = await User.findById(user.id)
+          const userData = await User.findById(userId)
             .populate('subscriptionId')
-            .lean() as any;
-
-          if (userData) {
-            // Attach subscription tier and permissions to session
-            session.user.subscriptionTier = userData.subscriptionTier || 'free';
-            session.user.permissions = getSessionPermissions(userData.subscriptionTier || 'free');
-            session.user.isPro = userData.subscriptionTier === 'pro';
-            
-            // Attach subscription info if available
-            if (userData.subscriptionId) {
-              session.user.hasActiveSubscription = true;
-            } else {
-              session.user.hasActiveSubscription = false;
-            }
-          } else {
-            // Fallback for new users
-            session.user.subscriptionTier = 'free';
-            session.user.permissions = getSessionPermissions('free');
-            session.user.isPro = false;
-            session.user.hasActiveSubscription = false;
-          }
+            .lean();
+          const tier = (userData as any)?.subscriptionTier || 'free';
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (token as any).subscriptionTier = tier;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (token as any).permissions = getSessionPermissions(tier);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (token as any).isPro = tier === 'pro';
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (token as any).hasActiveSubscription = !!(userData as any)?.subscriptionId;
         } catch (error) {
-          console.error('Error fetching user data in session callback:', error);
-          // Fallback values on error
-          session.user.subscriptionTier = 'free';
-          session.user.permissions = getSessionPermissions('free');
-          session.user.isPro = false;
-          session.user.hasActiveSubscription = false;
+          console.error('JWT callback enrichment failed:', error);
+          // Safe defaults
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (token as any).subscriptionTier = 'free';
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (token as any).permissions = getSessionPermissions('free');
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (token as any).isPro = false;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (token as any).hasActiveSubscription = false;
         }
+      } else {
+        // Ensure defaults exist for subsequent requests
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (token as any).subscriptionTier = (token as any).subscriptionTier ?? 'free';
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (token as any).permissions = (token as any).permissions ?? getSessionPermissions('free');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (token as any).isPro = (token as any).isPro ?? false;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (token as any).hasActiveSubscription = (token as any).hasActiveSubscription ?? false;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        session.user.id = ((token as any).id || (token as any).sub || session.user.id) as string;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        session.user.subscriptionTier = (token as any).subscriptionTier ?? 'free';
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        session.user.permissions = (token as any).permissions ?? getSessionPermissions('free');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        session.user.isPro = !!(token as any).isPro;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        session.user.hasActiveSubscription = !!(token as any).hasActiveSubscription;
       }
       return session;
     },
   },
-}; 
+};

@@ -13,3 +13,13 @@ declare module 'next-auth' {
     } & DefaultSession['user'];
   }
 } 
+
+declare module 'next-auth/jwt' {
+  interface JWT {
+    id?: string;
+    subscriptionTier?: string;
+    permissions?: Permission[];
+    isPro?: boolean;
+    hasActiveSubscription?: boolean;
+  }
+}
