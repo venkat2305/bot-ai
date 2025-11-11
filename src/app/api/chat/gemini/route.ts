@@ -86,12 +86,12 @@ export async function POST(req: NextRequest) {
       : google(model);
 
     const result = streamText({
-      model: modelInstance,
+      model: modelInstance as any,
       messages: transformedMessages as any,
     });
 
     // Use native Vercel AI SDK stream format
-    return result.toDataStreamResponse();
+    return result.toTextStreamResponse();
   } catch (error) {
     console.error('Error with Gemini chat completion:', error);
     console.error('Error details:', {

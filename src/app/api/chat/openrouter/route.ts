@@ -57,12 +57,12 @@ export async function POST(req: NextRequest) {
     }));
 
     const result = streamText({
-      model: openrouter(model),
-      messages: transformedMessages,
+      model: openrouter(model) as any,
+      messages: transformedMessages as any,
     });
 
     // Use native Vercel AI SDK stream format
-    return result.toDataStreamResponse();
+    return result.toTextStreamResponse();
   } catch (error) {
     console.error('Error with OpenRouter chat completion:', error);
     return new Response(JSON.stringify({ error: 'Failed to get chat completion' }), { 

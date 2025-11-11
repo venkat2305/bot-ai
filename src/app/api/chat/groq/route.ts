@@ -81,12 +81,12 @@ export async function POST(req: NextRequest) {
     }));
 
     const result = streamText({
-      model: groq(model),
+      model: groq(model) as any,
       messages: transformedMessages as any,
     });
 
     // Use native Vercel AI SDK stream format
-    return result.toDataStreamResponse();
+    return result.toTextStreamResponse();
   } catch (error) {
     console.error('Error with Groq chat completion:', error);
     console.error('Groq error details:', {
